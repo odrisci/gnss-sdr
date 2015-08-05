@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2014  (see AUTHORS file for a list of contributors)
+# Copyright (C) 2012-2015  (see AUTHORS file for a list of contributors)
 #
 # This file is part of GNSS-SDR.
 #
@@ -16,7 +16,7 @@
 # along with GNSS-SDR. If not, see <http://www.gnu.org/licenses/>.
 #
 
-set(CHANNEL_FSM_SOURCES gps_l1_ca_channel_fsm.cc )
+set(CHANNEL_FSM_SOURCES channel_fsm.cc )
 
 include_directories(
      $(CMAKE_CURRENT_SOURCE_DIR)

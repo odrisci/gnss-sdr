@@ -5,7 +5,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -15,7 +15,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -83,6 +83,8 @@ public:
     int i_SV_health;
     double d_TGD;            //!< Estimated Group Delay Differential: L1-L2 correction term only for the benefit of "L1 P(Y)" or "L2 P(Y)" s users [s]
     double d_IODC;           //!< Issue of Data, Clock
+    double d_IODE_SF2;       //!< Issue of Data, Ephemeris (IODE), subframe 2
+    double d_IODE_SF3;       //!< Issue of Data, Ephemeris(IODE), subframe 3
     int i_AODO;              //!< Age of Data Offset (AODO) term for the navigation message correction table (NMCT) contained in subframe 4 (reference paragraph 20.3.3.5.1.9) [s]
 
     bool b_fit_interval_flag;//!< indicates the curve-fit interval used by the CS (Block II/IIA/IIR/IIR-M/IIF) and SS (Block IIIA) in determining the ephemeris parameters, as follows: 0 = 4 hours, 1 = greater than 4 hours.
@@ -133,9 +135,12 @@ public:
     void serialize(Archive& archive, const unsigned int version)
     {
         using boost::serialization::make_nvp;
+        if(version){};
 
         archive & make_nvp("i_satellite_PRN", i_satellite_PRN); // SV PRN NUMBER
         archive & make_nvp("d_TOW", d_TOW);          //!< Time of GPS Week of the ephemeris set (taken from subframes TOW) [s]
+        archive & make_nvp("d_IODE_SF2", d_IODE_SF2);
+        archive & make_nvp("d_IODE_SF3", d_IODE_SF3);
         archive & make_nvp("d_Crs", d_Crs);          //!< Amplitude of the Sine Harmonic Correction Term to the Orbit Radius [m]
         archive & make_nvp("d_Delta_n", d_Delta_n);  //!< Mean Motion Difference From Computed Value [semi-circles/s]
         archive & make_nvp("d_M_0", d_M_0);          //!< Mean Anomaly at Reference Time [semi-circles]

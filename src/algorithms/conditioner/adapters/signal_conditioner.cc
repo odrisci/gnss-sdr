@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -16,7 +16,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -51,6 +51,7 @@ SignalConditioner::SignalConditioner(ConfigurationInterface *configuration,
                 queue_(queue)
 {
     connected_ = false;
+    if(configuration){ };
 }
 
 
@@ -61,7 +62,6 @@ SignalConditioner::~SignalConditioner()
     delete in_filt_;
     delete res_;
 }
-
 
 
 void SignalConditioner::connect(gr::top_block_sptr top_block)
@@ -77,17 +77,12 @@ void SignalConditioner::connect(gr::top_block_sptr top_block)
 
     top_block->connect(data_type_adapt_->get_right_block(), 0,
                        in_filt_->get_left_block(), 0);
-
     DLOG(INFO) << "data_type_adapter -> input_filter";
-
     top_block->connect(in_filt_->get_right_block(), 0,
                        res_->get_left_block(), 0);
-
     DLOG(INFO) << "input_filter -> resampler";
-
     connected_ = true;
 }
-
 
 
 void SignalConditioner::disconnect(gr::top_block_sptr top_block)
@@ -115,8 +110,6 @@ gr::basic_block_sptr SignalConditioner::get_left_block()
 {
     return data_type_adapt_->get_left_block();
 }
-
-
 
 gr::basic_block_sptr SignalConditioner::get_right_block()
 {

@@ -4,11 +4,10 @@
  *        output.
  * \author Carlos Aviles, 2010. carlos.avilesr(at)googlemail.com
  *
- * Detailed description of the file here if needed.
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2012  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -18,7 +17,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,8 +32,9 @@
 
 #include "pass_through.h"
 #include <iostream>
-//#include <gnuradio/io_signature.h>
+#include <complex>
 #include <glog/logging.h>
+#include <volk/volk.h>
 #include "configuration_interface.h"
 
 using google::LogMessage;
@@ -47,8 +47,18 @@ Pass_Through::Pass_Through(ConfigurationInterface* configuration, std::string ro
         out_streams_(out_streams)
 {
     std::string default_item_type = "gr_complex";
-    item_type_ = configuration->property(role + ".item_type", default_item_type);
+    std::string input_type = configuration->property(role + ".input_item_type", default_item_type);
+    std::string output_type = configuration->property(role + ".output_item_type", default_item_type);
+    if(input_type.compare(output_type) != 0)
+        {
+            LOG(WARNING) << "input_item_type and output_item_type are different in a Pass_Through implementation! Taking "
+                         << input_type
+                         << ", but item_size will supersede it.";
+        }
+
+    item_type_ = configuration->property(role + ".item_type", input_type);
     vector_size_ = configuration->property(role + ".vector_size", 1);
+
     if(item_type_.compare("float") == 0)
         {
             item_size_ = sizeof(float);
@@ -59,7 +69,27 @@ Pass_Through::Pass_Through(ConfigurationInterface* configuration, std::string ro
         }
     else if(item_type_.compare("short") == 0)
         {
-            item_size_ = sizeof(short);
+            item_size_ = sizeof(int16_t);
+        }
+    else if(item_type_.compare("ishort") == 0)
+        {
+            item_size_ = sizeof(int16_t);
+        }
+    else if(item_type_.compare("cshort") == 0)
+        {
+            item_size_ = sizeof(lv_16sc_t);
+        }
+    else if(item_type_.compare("byte") == 0)
+        {
+            item_size_ = sizeof(int8_t);
+        }
+    else if(item_type_.compare("ibyte") == 0)
+        {
+            item_size_ = sizeof(int8_t);
+        }
+    else if(item_type_.compare("cbyte") == 0)
+        {
+            item_size_ = sizeof(lv_8sc_t);
         }
     else
         {
@@ -79,14 +109,16 @@ Pass_Through::~Pass_Through()
 
 void Pass_Through::connect(gr::top_block_sptr top_block)
 {
-    DLOG(INFO) << "nothing to connect internally";
+	if(top_block) { /* top_block is not null */};
+	DLOG(INFO) << "nothing to connect internally";
 }
 
 
 
 void Pass_Through::disconnect(gr::top_block_sptr top_block)
 {
-    // Nothing to disconnect
+	if(top_block) { /* top_block is not null */};
+	// Nothing to disconnect
 }
 
 

@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -128,6 +128,11 @@ public:
      * \brief Restart acquisition algorithm
      */
     void reset();
+
+    /*!
+     * \brief If state = 1, it forces the block to start acquiring from the first sample
+     */
+    void set_state(int state);
 
 private:
     ConfigurationInterface* configuration_;

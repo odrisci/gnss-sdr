@@ -17,7 +17,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2012  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -27,7 +27,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -43,6 +43,7 @@
 
 #include <ctime>
 #include <iostream>
+#include <boost/chrono.hpp>
 #include <gnuradio/top_block.h>
 #include <gnuradio/blocks/file_source.h>
 #include <gnuradio/analog/sig_source_waveform.h>
@@ -64,13 +65,12 @@ class GalileoE1PcpsAmbiguousAcquisitionGSoCTest: public ::testing::Test
 protected:
     GalileoE1PcpsAmbiguousAcquisitionGSoCTest()
     {
-        queue = gr::msg_queue::make(0);
-        top_block = gr::make_top_block("Acquisition test");
         factory = std::make_shared<GNSSBlockFactory>();
         config = std::make_shared<InMemoryConfiguration>();
         item_size = sizeof(gr_complex);
         stop = false;
         message = 0;
+        gnss_synchro = Gnss_Synchro();
     }
 
     ~GalileoE1PcpsAmbiguousAcquisitionGSoCTest()
@@ -107,7 +107,7 @@ void GalileoE1PcpsAmbiguousAcquisitionGSoCTest::init()
     config->set_property("Acquisition.coherent_integration_time_ms", "4");
     config->set_property("Acquisition.dump", "false");
     config->set_property("Acquisition.implementation", "Galileo_E1_PCPS_Ambiguous_Acquisition");
-    config->set_property("Acquisition.threshold", "50");
+    config->set_property("Acquisition.threshold", "0.1");
     config->set_property("Acquisition.doppler_max", "10000");
     config->set_property("Acquisition.doppler_step", "125");
     config->set_property("Acquisition.repeat_satellite", "false");
@@ -159,6 +159,8 @@ TEST_F(GalileoE1PcpsAmbiguousAcquisitionGSoCTest, ConnectAndRun)
     struct timeval tv;
     long long int begin = 0;
     long long int end = 0;
+    queue = gr::msg_queue::make(0);
+    top_block = gr::make_top_block("Acquisition test");
 
     init();
     std::shared_ptr<GNSSBlockInterface> acq_ = factory->GetBlock(config, "Acquisition", "Galileo_E1_PCPS_Ambiguous_Acquisition", 1, 1, queue);
@@ -174,13 +176,12 @@ TEST_F(GalileoE1PcpsAmbiguousAcquisitionGSoCTest, ConnectAndRun)
 
     EXPECT_NO_THROW( {
         gettimeofday(&tv, NULL);
-        begin = tv.tv_sec*1000000 + tv.tv_usec;
+        begin = tv.tv_sec * 1000000 + tv.tv_usec;
         top_block->run(); // Start threads and wait
         gettimeofday(&tv, NULL);
-        end = tv.tv_sec*1000000 + tv.tv_usec;
+        end = tv.tv_sec * 1000000 + tv.tv_usec;
     }) << "Failure running the top_block." << std::endl;
     std::cout <<  "Processed " << nsamples << " samples in " << (end - begin) << " microseconds" << std::endl;
-
 }
 
 TEST_F(GalileoE1PcpsAmbiguousAcquisitionGSoCTest, ValidationOfResults)
@@ -188,10 +189,12 @@ TEST_F(GalileoE1PcpsAmbiguousAcquisitionGSoCTest, ValidationOfResults)
     struct timeval tv;
     long long int begin = 0;
     long long int end = 0;
+    queue = gr::msg_queue::make(0);
+    top_block = gr::make_top_block("Acquisition test");
 
     init();
     std::shared_ptr<GNSSBlockInterface> acq_ = factory->GetBlock(config, "Acquisition", "Galileo_E1_PCPS_Ambiguous_Acquisition", 1, 1, queue);
-    std::shared_ptr<AcquisitionInterface> acquisition = std::dynamic_pointer_cast<AcquisitionInterface>(acq_);
+    std::shared_ptr<GalileoE1PcpsAmbiguousAcquisition> acquisition = std::dynamic_pointer_cast<GalileoE1PcpsAmbiguousAcquisition>(acq_);
 
 
     ASSERT_NO_THROW( {
@@ -207,7 +210,7 @@ TEST_F(GalileoE1PcpsAmbiguousAcquisitionGSoCTest, ValidationOfResults)
     }) << "Failure setting channel_internal_queue." << std::endl;
 
     ASSERT_NO_THROW( {
-        acquisition->set_threshold(config->property("Acquisition.threshold", 0.0));
+        acquisition->set_threshold(config->property("Acquisition.threshold", 0.00001));
     }) << "Failure setting threshold." << std::endl;
 
     ASSERT_NO_THROW( {
@@ -215,7 +218,7 @@ TEST_F(GalileoE1PcpsAmbiguousAcquisitionGSoCTest, ValidationOfResults)
     }) << "Failure setting doppler_max." << std::endl;
 
     ASSERT_NO_THROW( {
-        acquisition->set_doppler_step(config->property("Acquisition.doppler_step", 500));
+        acquisition->set_doppler_step(config->property("Acquisition.doppler_step", 250));
     }) << "Failure setting doppler_step." << std::endl;
 
     ASSERT_NO_THROW( {
@@ -224,7 +227,8 @@ TEST_F(GalileoE1PcpsAmbiguousAcquisitionGSoCTest, ValidationOfResults)
 
     ASSERT_NO_THROW( {
         std::string path = std::string(TEST_PATH);
-        std::string file = path + "signal_samples/GSoC_CTTC_capture_2012_07_26_4Msps_4ms.dat";
+        //std::string file = path + "signal_samples/GSoC_CTTC_capture_2012_07_26_4Msps_4ms.dat";
+        std::string file = path + "signal_samples/Galileo_E1_ID_1_Fs_4Msps_8ms.dat";
         const char * file_name = file.c_str();
         gr::blocks::file_source::sptr file_source = gr::blocks::file_source::make(sizeof(gr_complex), file_name, false);
         top_block->connect(file_source, 0, acquisition->get_left_block(), 0);
@@ -234,22 +238,23 @@ TEST_F(GalileoE1PcpsAmbiguousAcquisitionGSoCTest, ValidationOfResults)
         start_queue();
         acquisition->init();
         acquisition->reset();
+        acquisition->set_state(1);
     }) << "Failure starting acquisition" << std::endl;
 
     EXPECT_NO_THROW( {
         gettimeofday(&tv, NULL);
-        begin = tv.tv_sec*1000000 + tv.tv_usec;
+        begin = tv.tv_sec * 1000000 + tv.tv_usec;
         top_block->run(); // Start threads and wait
         gettimeofday(&tv, NULL);
-        end = tv.tv_sec*1000000 + tv.tv_usec;
+        end = tv.tv_sec * 1000000 + tv.tv_usec;
     }) << "Failure running the top_block." << std::endl;
 
-    ASSERT_NO_THROW( {
-        ch_thread.timed_join(boost::posix_time::seconds(1));
-    }) << "Failure while waiting the queue to stop" << std::endl;
+    stop_queue();
 
     unsigned long int nsamples = gnss_synchro.Acq_samplestamp_samples;
     std::cout <<  "Acquired " << nsamples << " samples in " << (end - begin) << " microseconds" << std::endl;
 
-    EXPECT_EQ(0, message) << "Acquisition failure. Expected message: 0=ACQ STOP.";
+    EXPECT_EQ(2, message) << "Acquisition failure. Expected message: 0=ACQ STOP.";
+
+    ch_thread.join();
 }

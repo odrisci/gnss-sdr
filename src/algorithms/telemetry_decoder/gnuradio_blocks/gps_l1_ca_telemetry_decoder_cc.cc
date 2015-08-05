@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -16,7 +16,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -86,7 +86,6 @@ gps_l1_ca_telemetry_decoder_cc::gps_l1_ca_telemetry_decoder_cc(
     d_queue = queue;
     d_dump = dump;
     d_satellite = Gnss_Satellite(satellite.get_system(), satellite.get_PRN());
-    LOG(INFO) << "TELEMETRY PROCESSING: satellite " << d_satellite;
     d_vector_length = vector_length;
     d_samples_per_bit = ( GPS_L1_CA_CODE_RATE_HZ / GPS_L1_CA_CODE_LENGTH_CHIPS ) / GPS_CA_TELEMETRY_RATE_BITS_SECOND;
     d_fs_in = fs_in;
@@ -130,7 +129,12 @@ gps_l1_ca_telemetry_decoder_cc::gps_l1_ca_telemetry_decoder_cc(
     d_TOW_at_Preamble = 0;
     d_TOW_at_current_symbol = 0;
     flag_TOW_set = false;
-    d_average_count=0;
+    d_average_count = 0;
+    d_flag_preamble = false;
+    d_word_number = 0;
+    d_decimation_output_factor = 1;
+    d_channel = 0;
+    Prn_timestamp_at_preamble_ms = 0.0;
     //set_history(d_samples_per_bit*8); // At least a history of 8 bits are needed to correlate with the preamble
 }
 
@@ -209,7 +213,7 @@ int gps_l1_ca_telemetry_decoder_cc::general_work (int noutput_items, gr_vector_i
                 }
             else if (d_stat == 1) //check 6 seconds of preamble separation
                 {
-                    preamble_diff = abs(d_sample_counter - d_preamble_index);
+                    preamble_diff = d_sample_counter - d_preamble_index;
                     if (abs(preamble_diff - 6000) < 1)
                         {
                             d_GPS_FSM.Event_gps_word_preamble();
@@ -235,7 +239,7 @@ int gps_l1_ca_telemetry_decoder_cc::general_work (int noutput_items, gr_vector_i
                             LOG(INFO) << "Lost of frame sync SAT " << this->d_satellite << " preamble_diff= " << preamble_diff;
                             d_stat = 0; //lost of frame sync
                             d_flag_frame_sync = false;
-                            flag_TOW_set=false;
+                            flag_TOW_set = false;
                         }
                 }
         }
@@ -302,11 +306,11 @@ int gps_l1_ca_telemetry_decoder_cc::general_work (int noutput_items, gr_vector_i
     current_synchro_data = in[0][0];
     //2. Add the telemetry decoder information
     if (this->d_flag_preamble == true and d_GPS_FSM.d_nav.d_TOW > 0)
-    	//update TOW at the preamble instant (todo: check for valid d_TOW)
-    	// JAVI: 30/06/2014
-    	// TOW, in GPS, is referred to the START of the SUBFRAME, that is, THE FIRST SYMBOL OF THAT SUBFRAME, NOT THE PREAMBLE.
-    	// thus, no correction should be done. d_TOW_at_Preamble should be renamed to d_TOW_at_subframe_start.
-    	// Sice we detected the preable, then, we are in the last symbol of that preamble, or just at the start of the first subframe symbol.
+        //update TOW at the preamble instant (todo: check for valid d_TOW)
+        // JAVI: 30/06/2014
+        // TOW, in GPS, is referred to the START of the SUBFRAME, that is, THE FIRST SYMBOL OF THAT SUBFRAME, NOT THE PREAMBLE.
+        // thus, no correction should be done. d_TOW_at_Preamble should be renamed to d_TOW_at_subframe_start.
+        // Sice we detected the preable, then, we are in the last symbol of that preamble, or just at the start of the first subframe symbol.
         {
             d_TOW_at_Preamble = d_GPS_FSM.d_nav.d_TOW + GPS_SUBFRAME_SECONDS; //we decoded the current TOW when the last word of the subframe arrive, so, we have a lag of ONE SUBFRAME
             d_TOW_at_current_symbol = d_TOW_at_Preamble;//GPS_L1_CA_CODE_PERIOD;// + (double)GPS_CA_PREAMBLE_LENGTH_BITS/(double)GPS_CA_TELEMETRY_RATE_BITS_SECOND;
@@ -324,8 +328,8 @@ int gps_l1_ca_telemetry_decoder_cc::general_work (int noutput_items, gr_vector_i
     current_synchro_data.d_TOW = d_TOW_at_Preamble;
     current_synchro_data.d_TOW_at_current_symbol = d_TOW_at_current_symbol;
 
-    current_synchro_data.d_TOW_hybrid_at_current_symbol= current_synchro_data.d_TOW_at_current_symbol; // to be  used in the hybrid configuration
-    current_synchro_data.Flag_valid_word = (d_flag_frame_sync == true and d_flag_parity == true and flag_TOW_set==true);
+    current_synchro_data.d_TOW_hybrid_at_current_symbol = current_synchro_data.d_TOW_at_current_symbol; // to be  used in the hybrid configuration
+    current_synchro_data.Flag_valid_word = (d_flag_frame_sync == true and d_flag_parity == true and flag_TOW_set == true);
     current_synchro_data.Flag_preamble = d_flag_preamble;
     current_synchro_data.Prn_timestamp_ms = in[0][0].Tracking_timestamp_secs * 1000.0;
     current_synchro_data.Prn_timestamp_at_preamble_ms = Prn_timestamp_at_preamble_ms;
@@ -352,23 +356,24 @@ int gps_l1_ca_telemetry_decoder_cc::general_work (int noutput_items, gr_vector_i
     //todo: implement averaging
 
     d_average_count++;
-    if (d_average_count==d_decimation_output_factor)
-    {
-    	d_average_count=0;
-        //3. Make the output (copy the object contents to the GNURadio reserved memory)
-        *out[0] = current_synchro_data;
-        //std::cout<<"GPS TLM output on CH="<<this->d_channel << " SAMPLE STAMP="<<d_sample_counter/d_decimation_output_factor<<std::endl;
-        return 1;
-    }else{
-    	return 0;
-    }
-
+    if (d_average_count == d_decimation_output_factor)
+        {
+            d_average_count = 0;
+            //3. Make the output (copy the object contents to the GNURadio reserved memory)
+            *out[0] = current_synchro_data;
+            //std::cout<<"GPS L1 TLM output on CH="<<this->d_channel << " SAMPLE STAMP="<<d_sample_counter/d_decimation_output_factor<<std::endl;
+            return 1;
+        }
+    else
+        {
+            return 0;
+        }
 }
 
 
 void gps_l1_ca_telemetry_decoder_cc::set_decimation(int decimation)
 {
-	d_decimation_output_factor=decimation;
+    d_decimation_output_factor = decimation;
 }
 
 void gps_l1_ca_telemetry_decoder_cc::set_satellite(Gnss_Satellite satellite)

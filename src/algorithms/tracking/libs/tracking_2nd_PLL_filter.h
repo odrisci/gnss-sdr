@@ -11,7 +11,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2011  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -21,7 +21,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -48,26 +48,26 @@ class Tracking_2nd_PLL_filter
 {
 private:
     // PLL filter parameters
-    float d_tau1_carr;
-    float d_tau2_carr;
-    float d_pdi_carr;
+    float d_tau1_carr = 0;
+    float d_tau2_carr = 0;
+    float d_pdi_carr = 0;
 
-    float d_pllnoisebandwidth;
-    float d_plldampingratio;
+    float d_pllnoisebandwidth = 0;
+    float d_plldampingratio = 0;
 
-    float d_old_carr_error;
-    float d_old_carr_nco;
+    float d_old_carr_error = 0;
+    float d_old_carr_nco = 0;
 
     void calculate_lopp_coef(float* tau1,float* tau2, float lbw, float zeta, float k);
 
 public:
-	void set_PLL_BW(float pll_bw_hz);  //! Set PLL loop bandwidth [Hz]
-	void set_pdi(float pdi_carr); //! Set Summation interval for code [s]
-	void initialize();
-	float get_carrier_nco(float PLL_discriminator);
-        Tracking_2nd_PLL_filter(float pdi_carr);
-	Tracking_2nd_PLL_filter();
-	~Tracking_2nd_PLL_filter();
+    void set_PLL_BW(float pll_bw_hz);  //! Set PLL loop bandwidth [Hz]
+    void set_pdi(float pdi_carr); //! Set Summation interval for code [s]
+    void initialize();
+    float get_carrier_nco(float PLL_discriminator);
+    Tracking_2nd_PLL_filter(float pdi_carr);
+    Tracking_2nd_PLL_filter();
+    ~Tracking_2nd_PLL_filter();
 };
 
 #endif

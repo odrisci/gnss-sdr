@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -16,7 +16,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -62,9 +62,9 @@
 class hybrid_ls_pvt
 {
 private:
-    arma::vec leastSquarePos(arma::mat satpos, arma::vec obs, arma::mat w);
-    arma::vec rotateSatellite(double traveltime, arma::vec X_sat);
-    void topocent(double *Az, double *El, double *D, arma::vec x, arma::vec dx);
+    arma::vec leastSquarePos(const arma::mat & satpos, const arma::vec & obs, const arma::mat & w);
+    arma::vec rotateSatellite(double traveltime, const arma::vec & X_sat);
+    void topocent(double *Az, double *El, double *D, const arma::vec & x, const arma::vec & dx);
     void togeod(double *dphi, double *dlambda, double *h, double a, double finv, double X, double Y, double Z);
     void tropo(double *ddr_m, double sinel, double hsta_km, double p_mb, double t_kel, double hum, double hp_km, double htkel_km, double hhum_km);
 public:

@@ -8,7 +8,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -18,7 +18,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -84,11 +84,13 @@ Rtcm_Printer::~Rtcm_Printer()
             long pos;
             rtcm_file_descriptor.close();
             pos = rtcm_file_descriptor.tellp();
-            if (pos == 0) remove(rtcm_filename.c_str());
+            if (pos == 0)
+                {
+                    if(remove(rtcm_filename.c_str()) != 0) LOG(INFO) << "Error deleting temporary file";
+                }
         }
     close_serial();
 }
-
 
 
 
@@ -108,7 +110,7 @@ int Rtcm_Printer::init_serial(std::string serial_device)
     fd = open(serial_device.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd == -1) return fd;  // failed to open TTY port
 
-    fcntl(fd, F_SETFL, 0);    // clear all flags on descriptor, enable direct I/O
+    if(fcntl(fd, F_SETFL, 0) == -1) LOG(INFO) << "Error enabling direct I/O";    // clear all flags on descriptor, enable direct I/O
     tcgetattr(fd, &options);  // read serial port options
 
     BAUD  = B9600;

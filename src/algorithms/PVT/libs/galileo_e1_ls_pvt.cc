@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -16,7 +16,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -63,6 +63,22 @@ galileo_e1_ls_pvt::galileo_e1_ls_pvt(int nchannels, std::string dump_filename, b
                     }
                 }
         }
+    d_valid_observations = 0;
+    d_latitude_d = 0.0;
+    d_longitude_d = 0.0;
+    d_height_m = 0.0;
+    d_avg_latitude_d = 0.0;
+    d_avg_longitude_d = 0.0;
+    d_avg_height_m = 0.0;
+    d_x_m = 0.0;
+    d_y_m = 0.0;
+    d_z_m = 0.0;
+    d_GDOP = 0.0;
+    d_PDOP = 0.0;
+    d_HDOP = 0.0;
+    d_VDOP = 0.0;
+    d_TDOP = 0.0;
+    d_flag_averaging = false;
 }
 
 
@@ -79,7 +95,7 @@ galileo_e1_ls_pvt::~galileo_e1_ls_pvt()
 }
 
 
-arma::vec galileo_e1_ls_pvt::rotateSatellite(double traveltime, arma::vec X_sat)
+arma::vec galileo_e1_ls_pvt::rotateSatellite(double traveltime, const arma::vec & X_sat)
 {
     /*
      *  Returns rotated satellite ECEF coordinates due to Earth
@@ -107,7 +123,7 @@ arma::vec galileo_e1_ls_pvt::rotateSatellite(double traveltime, arma::vec X_sat)
     R3(1, 2) = 0.0;
     R3(2, 0) = 0.0;
     R3(2, 1) = 0.0;
-    R3(2, 2) = 1;
+    R3(2, 2) = 1.0;
 
     //--- Do the rotation ------------------------------------------------------
     arma::vec X_sat_rot;
@@ -116,7 +132,7 @@ arma::vec galileo_e1_ls_pvt::rotateSatellite(double traveltime, arma::vec X_sat)
 }
 
 
-arma::vec galileo_e1_ls_pvt::leastSquarePos(arma::mat satpos, arma::vec obs, arma::mat w)
+arma::vec galileo_e1_ls_pvt::leastSquarePos(const arma::mat & satpos, const arma::vec & obs, const arma::mat & w)
 {
     /* Computes the Least Squares Solution.
      *   Inputs:
@@ -188,7 +204,7 @@ arma::vec galileo_e1_ls_pvt::leastSquarePos(arma::mat satpos, arma::vec obs, arm
                                     togeod(&dphi, &dlambda, &h, 6378137.0, 298.257223563, pos(0), pos(1), pos(2));
 
                                     //--- Find delay due to troposphere (in meters)
-                                    tropo(&trop, sin(d_visible_satellites_El[i] * GALILEO_PI/180.0), h/1000, 1013.0, 293.0, 50.0, 0.0, 0.0, 0.0);
+                                    tropo(&trop, sin(d_visible_satellites_El[i] * GALILEO_PI / 180.0), h / 1000.0, 1013.0, 293.0, 50.0, 0.0, 0.0, 0.0);
                                     if(trop > 50.0 ) trop = 0.0;
                                 }
                         }
@@ -238,9 +254,9 @@ bool galileo_e1_ls_pvt::get_PVT(std::map<int,Gnss_Synchro> gnss_pseudoranges_map
     arma::mat satpos = arma::zeros(3, valid_pseudoranges);           // satellite positions matrix
 
     int Galileo_week_number = 0;
-    double utc = 0;
-    double TX_time_corrected_s;
-    double SV_clock_bias_s = 0;
+    double utc = 0.0;
+    double TX_time_corrected_s = 0.0;
+    double SV_clock_bias_s = 0.0;
 
     d_flag_averaging = flag_averaging;
 
@@ -260,7 +276,7 @@ bool galileo_e1_ls_pvt::get_PVT(std::map<int,Gnss_Synchro> gnss_pseudoranges_map
                     /*!
                      * \todo Place here the satellite CN0 (power level, or weight factor)
                      */
-                    W(obs_counter, obs_counter) = 1;
+                    W(obs_counter, obs_counter) = 1.0;
 
                     // COMMON RX TIME PVT ALGORITHM MODIFICATION (Like RINEX files)
                     // first estimate of transmit time
@@ -296,8 +312,7 @@ bool galileo_e1_ls_pvt::get_PVT(std::map<int,Gnss_Synchro> gnss_pseudoranges_map
 
                     Galileo_week_number = galileo_ephemeris_iter->second.WN_5; //for GST
 
-                    //debug
-                    double GST = galileo_ephemeris_iter->second.Galileo_System_Time(Galileo_week_number, galileo_current_time);
+                    double GST = galileo_ephemeris_map.find(gnss_pseudoranges_iter->first)->second.Galileo_System_Time(Galileo_week_number, galileo_current_time);
                     utc = galileo_utc_model.GST_to_UTC_time(GST, Galileo_week_number);
                     // get time string gregorian calendar
                     boost::posix_time::time_duration t = boost::posix_time::seconds(utc);
@@ -308,7 +323,7 @@ bool galileo_e1_ls_pvt::get_PVT(std::map<int,Gnss_Synchro> gnss_pseudoranges_map
                     //end debug
 
                     // SV ECEF DEBUG OUTPUT
-                    LOG(INFO) << "ECEF satellite SV ID=" << galileo_ephemeris_iter->second.i_satellite_PRN
+                    DLOG(INFO) << "ECEF satellite SV ID=" << galileo_ephemeris_iter->second.i_satellite_PRN
                                << " X=" << galileo_ephemeris_iter->second.d_satpos_X
                                << " [m] Y=" << galileo_ephemeris_iter->second.d_satpos_Y
                                << " [m] Z=" << galileo_ephemeris_iter->second.d_satpos_Z
@@ -338,14 +353,15 @@ bool galileo_e1_ls_pvt::get_PVT(std::map<int,Gnss_Synchro> gnss_pseudoranges_map
             mypos = leastSquarePos(satpos, obs, W);
 
             // Compute GST and Gregorian time
-            double GST = galileo_ephemeris_iter->second.Galileo_System_Time(Galileo_week_number, galileo_current_time);
+            //double GST = galileo_ephemeris_iter->second.Galileo_System_Time(Galileo_week_number, galileo_current_time);
+            double GST = galileo_ephemeris_map.find(gnss_pseudoranges_iter->first)->second.Galileo_System_Time(Galileo_week_number, galileo_current_time);
             utc = galileo_utc_model.GST_to_UTC_time(GST, Galileo_week_number);
             // get time string Gregorian calendar
             boost::posix_time::time_duration t = boost::posix_time::seconds(utc);
             // 22 August 1999 00:00 last Galileo start GST epoch (ICD sec 5.1.2)
             boost::posix_time::ptime p_time(boost::gregorian::date(1999, 8, 22), t);
             d_position_UTC_time = p_time;
-            LOG(INFO) << "Galileo Position at TOW=" << galileo_current_time << " in ECEF (X,Y,Z) = " << mypos;
+            DLOG(INFO) << "Galileo Position at TOW=" << galileo_current_time << " in ECEF (X,Y,Z) = " << mypos;
 
             cart2geo(static_cast<double>(mypos(0)), static_cast<double>(mypos(1)), static_cast<double>(mypos(2)), 4);
             //ToDo: Find an Observables/PVT random bug with some satellite configurations that gives an erratic PVT solution (i.e. height>50 km)
@@ -510,23 +526,23 @@ void galileo_e1_ls_pvt::cart2geo(double X, double Y, double Z, int elipsoid_sele
                  4. World Geodetic System 1984
      */
 
-    const double a[5] = {6378388, 6378160, 6378135, 6378137, 6378137};
-    const double f[5] = {1/297, 1/298.247, 1/298.26, 1/298.257222101, 1/298.257223563};
+    const double a[5] = {6378388.0, 6378160.0, 6378135.0, 6378137.0, 6378137.0};
+    const double f[5] = {1.0 / 297.0, 1.0 / 298.247, 1.0 / 298.26, 1.0 / 298.257222101, 1.0 / 298.257223563};
 
     double lambda  = atan2(Y, X);
-    double ex2 = (2 - f[elipsoid_selection]) * f[elipsoid_selection] / ((1 - f[elipsoid_selection]) * (1 - f[elipsoid_selection]));
-    double c = a[elipsoid_selection] * sqrt(1+ex2);
-    double phi = atan(Z / ((sqrt(X * X + Y * Y) * (1 - (2 - f[elipsoid_selection])) * f[elipsoid_selection])));
+    double ex2 = (2.0 - f[elipsoid_selection]) * f[elipsoid_selection] / ((1.0 - f[elipsoid_selection]) * (1.0 - f[elipsoid_selection]));
+    double c = a[elipsoid_selection] * sqrt(1.0 + ex2);
+    double phi = atan(Z / ((sqrt(X * X + Y * Y) * (1.0 - (2.0 - f[elipsoid_selection])) * f[elipsoid_selection])));
 
     double h = 0.1;
-    double oldh = 0;
+    double oldh = 0.0;
     double N;
     int iterations = 0;
     do
         {
             oldh = h;
             N = c / sqrt(1 + ex2 * (cos(phi) * cos(phi)));
-            phi = atan(Z / ((sqrt(X * X + Y * Y) * (1 - (2 - f[elipsoid_selection]) * f[elipsoid_selection] * N / (N + h) ))));
+            phi = atan(Z / ((sqrt(X * X + Y * Y) * (1.0 - (2.0 - f[elipsoid_selection]) * f[elipsoid_selection] * N / (N + h) ))));
             h = sqrt(X * X + Y * Y) / cos(phi) - N;
             iterations = iterations + 1;
             if (iterations > 100)
@@ -535,9 +551,9 @@ void galileo_e1_ls_pvt::cart2geo(double X, double Y, double Z, int elipsoid_sele
                     break;
                 }
         }
-    while (abs(h - oldh) > 1.0e-12);
+    while (std::abs(h - oldh) > 1.0e-12);
     d_latitude_d = phi * 180.0 / GALILEO_PI;
-    d_longitude_d = lambda * 180 / GALILEO_PI;
+    d_longitude_d = lambda * 180.0 / GALILEO_PI;
     d_height_m = h;
 }
 
@@ -568,17 +584,17 @@ void galileo_e1_ls_pvt::togeod(double *dphi, double *dlambda, double *h, double 
     *h = 0;
     double tolsq = 1.e-10;  // tolerance to accept convergence
     int maxit = 10;         // max number of iterations
-    double rtd = 180/GPS_PI;
+    double rtd = 180.0 / GPS_PI;
 
     // compute square of eccentricity
     double esq;
     if (finv < 1.0E-20)
         {
-            esq = 0;
+            esq = 0.0;
         }
     else
         {
-            esq = (2 - 1/finv) / finv;
+            esq = (2.0 - 1.0 / finv) / finv;
         }
 
     // first guess
@@ -591,7 +607,7 @@ void galileo_e1_ls_pvt::togeod(double *dphi, double *dlambda, double *h, double 
         }
     else
         {
-            *dlambda = 0;
+            *dlambda = 0.0;
         }
 
     // correct longitude bound
@@ -609,7 +625,7 @@ void galileo_e1_ls_pvt::togeod(double *dphi, double *dlambda, double *h, double 
         }
     else
         {
-            sinphi = 0;
+            sinphi = 0.0;
         }
     *dphi = asin(sinphi);
 
@@ -628,7 +644,7 @@ void galileo_e1_ls_pvt::togeod(double *dphi, double *dlambda, double *h, double 
     double N_phi;
     double dP;
     double dZ;
-    double oneesq = 1 - esq;
+    double oneesq = 1.0 - esq;
 
     for (int i = 0; i < maxit; i++)
         {
@@ -660,7 +676,7 @@ void galileo_e1_ls_pvt::togeod(double *dphi, double *dlambda, double *h, double 
 }
 
 
-void galileo_e1_ls_pvt::topocent(double *Az, double *El, double *D, arma::vec x, arma::vec dx)
+void galileo_e1_ls_pvt::topocent(double *Az, double *El, double *D, const arma::vec & x, const arma::vec & dx)
 {
     /*  Transformation of vector dx into topocentric coordinate
 	system with origin at x
@@ -700,7 +716,7 @@ void galileo_e1_ls_pvt::topocent(double *Az, double *El, double *D, arma::vec x,
     F(1,1) = -sb * sl;
     F(1,2) = cb * sl;
 
-    F(2,0) = 0;
+    F(2,0) = 0.0;
     F(2,1) = cb;
     F(2,2) = sb;
 
@@ -717,8 +733,8 @@ void galileo_e1_ls_pvt::topocent(double *Az, double *El, double *D, arma::vec x,
 
     if (hor_dis < 1.0E-20)
         {
-            *Az = 0;
-            *El = 90;
+            *Az = 0.0;
+            *El = 90.0;
         }
     else
         {

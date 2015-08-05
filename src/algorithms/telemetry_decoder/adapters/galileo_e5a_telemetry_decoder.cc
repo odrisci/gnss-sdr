@@ -11,7 +11,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -82,6 +82,7 @@ GalileoE5aTelemetryDecoder::GalileoE5aTelemetryDecoder(ConfigurationInterface* c
     telemetry_decoder_->set_utc_model_queue(&global_galileo_utc_model_queue);
 
     DLOG(INFO) << "global navigation message queue assigned to telemetry_decoder ("<< telemetry_decoder_->unique_id() << ")";
+    channel_ = 0;
 }
 
 
@@ -99,14 +100,16 @@ void GalileoE5aTelemetryDecoder::set_satellite(Gnss_Satellite satellite)
 
 void GalileoE5aTelemetryDecoder::connect(gr::top_block_sptr top_block)
 {
-    // Nothing to connect internally
+	if(top_block) { /* top_block is not null */};
+	// Nothing to connect internally
     DLOG(INFO) << "nothing to connect internally";
 }
 
 
 void GalileoE5aTelemetryDecoder::disconnect(gr::top_block_sptr top_block)
 {
-    // Nothing to disconnect
+	if(top_block) { /* top_block is not null */};
+	// Nothing to disconnect
 }
 
 

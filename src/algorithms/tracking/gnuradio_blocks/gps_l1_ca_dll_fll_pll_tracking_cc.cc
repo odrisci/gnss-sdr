@@ -11,7 +11,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -158,6 +158,22 @@ Gps_L1_Ca_Dll_Fll_Pll_Tracking_cc::Gps_L1_Ca_Dll_Fll_Pll_Tracking_cc(
     systemName["S"] = std::string("SBAS");
     systemName["E"] = std::string("Galileo");
     systemName["C"] = std::string("Compass");
+
+    d_channel_internal_queue = 0;
+    //d_acquisition_gnss_synchro = 0;
+    d_channel = 0;
+    d_acq_carrier_doppler_hz = 0.0;
+    d_carrier_doppler_hz = 0;
+    d_code_freq_hz = 0.0;
+    d_rem_carr_phase = 0.0;
+    d_rem_code_phase_samples = 0.0;
+    d_acq_code_phase_samples = 0;
+    d_acq_carrier_doppler_hz = 0.0;
+    d_acc_carrier_phase_rad = 0.0;
+    d_acc_code_phase_samples = 0;
+    d_FLL_discriminator_hz = 0.0;
+    d_pull_in = false;
+    d_FLL_wait = 1;
 }
 
 
@@ -367,6 +383,7 @@ int Gps_L1_Ca_Dll_Fll_Pll_Tracking_cc::general_work (int noutput_items, gr_vecto
                     current_synchro_data.Code_phase_secs = 0.0;
                     current_synchro_data.CN0_dB_hz = 0.0;
                     current_synchro_data.Flag_valid_tracking = false;
+                    current_synchro_data.Flag_valid_pseudorange = false;
 
                     *out[0] = current_synchro_data;
 
@@ -402,6 +419,7 @@ int Gps_L1_Ca_Dll_Fll_Pll_Tracking_cc::general_work (int noutput_items, gr_vecto
                     current_synchro_data.Code_phase_secs = 0.0;
                     current_synchro_data.CN0_dB_hz = 0.0;
                     current_synchro_data.Flag_valid_tracking = false;
+                    current_synchro_data.Flag_valid_pseudorange = false;
 
                     *out[0] = current_synchro_data;
 
@@ -534,6 +552,7 @@ int Gps_L1_Ca_Dll_Fll_Pll_Tracking_cc::general_work (int noutput_items, gr_vecto
             current_synchro_data.Carrier_Doppler_hz = d_carrier_doppler_hz;
             current_synchro_data.CN0_dB_hz = d_CN0_SNV_dB_Hz;
             current_synchro_data.Flag_valid_tracking = true;
+             current_synchro_data.Flag_valid_pseudorange = false;
             *out[0] = current_synchro_data;
         }
     else
@@ -558,7 +577,9 @@ int Gps_L1_Ca_Dll_Fll_Pll_Tracking_cc::general_work (int noutput_items, gr_vecto
             *d_Early  = gr_complex(0,0);
             *d_Prompt = gr_complex(0,0);
             *d_Late   = gr_complex(0,0);
+
             Gnss_Synchro **out = (Gnss_Synchro **) &output_items[0]; //block output streams pointer
+            d_acquisition_gnss_synchro->Flag_valid_pseudorange = false;
             *out[0] = *d_acquisition_gnss_synchro;
         }
 

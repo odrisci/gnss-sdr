@@ -5,7 +5,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -150,6 +150,7 @@ public:
     //double d_master_clock;  // GPS transmission time
     double d_satClkCorr;     // GPS clock error
     double d_dtr;            // relativistic clock correction term
+    double d_satClkDrift;
 
     // satellite positions
     double d_satpos_X;       //!< Earth-fixed coordinate x of the satellite [m]. Intersection of the IERS Reference Meridian (IRM) and the plane passing through the origin and normal to the Z-axis.

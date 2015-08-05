@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2014  (see AUTHORS file for a list of contributors)
+# Copyright (C) 2012-2015  (see AUTHORS file for a list of contributors)
 #
 # This file is part of GNSS-SDR.
 #
@@ -37,6 +37,10 @@ set(SYSTEM_PARAMETERS_SOURCES
 	 sbas_satellite_correction.cc
 	 sbas_telemetry_data.cc
 	 galileo_fnav_message.cc
+	 gps_cnav_ephemeris.cc
+	 gps_cnav_navigation_message.cc
+	 gps_cnav_iono.cc
+	 gps_cnav_utc_model.cc
 )
 
 

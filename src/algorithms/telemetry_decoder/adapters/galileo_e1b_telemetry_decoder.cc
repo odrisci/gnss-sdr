@@ -7,7 +7,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2013  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -17,7 +17,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -76,6 +76,12 @@ GalileoE1BTelemetryDecoder::GalileoE1BTelemetryDecoder(ConfigurationInterface* c
     telemetry_decoder_->set_iono_queue(&global_galileo_iono_queue);
     telemetry_decoder_->set_almanac_queue(&global_galileo_almanac_queue);
     telemetry_decoder_->set_utc_model_queue(&global_galileo_utc_model_queue);
+
+    //decimation factor
+    int decimation_factor = configuration->property(role + ".decimation_factor", 1);
+    telemetry_decoder_->set_decimation(decimation_factor);
+
+    channel_ = 0;
 }
 
 
@@ -93,6 +99,7 @@ void GalileoE1BTelemetryDecoder::set_satellite(Gnss_Satellite satellite)
 
 void GalileoE1BTelemetryDecoder::connect(gr::top_block_sptr top_block)
 {
+    if(top_block) { /* top_block is not null */};
     // Nothing to connect internally
     DLOG(INFO) << "nothing to connect internally";
 }
@@ -100,6 +107,7 @@ void GalileoE1BTelemetryDecoder::connect(gr::top_block_sptr top_block)
 
 void GalileoE1BTelemetryDecoder::disconnect(gr::top_block_sptr top_block)
 {
+    if(top_block) { /* top_block is not null */};
     // Nothing to disconnect
 }
 

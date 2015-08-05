@@ -25,7 +25,7 @@
 *
 * -------------------------------------------------------------------------
 *
-* Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+* Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
 *
 * GNSS-SDR is a software defined Global Navigation
 *          Satellite Systems receiver
@@ -201,6 +201,13 @@ public:
     {
         d_active = active;
     }
+
+    /*!
+     * \brief If set to 1, ensures that acquisition starts at the
+     * first available sample.
+     * \param state - int=1 forces start of acquisition
+     */
+    void set_state(int state);
 
     /*!
      * \brief Set acquisition channel unique ID

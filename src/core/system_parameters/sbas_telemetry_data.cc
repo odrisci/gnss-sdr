@@ -5,7 +5,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -15,7 +15,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,10 +28,11 @@
  * -------------------------------------------------------------------------
  */
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cmath>
 #include <cstring>
 #include <iostream>
+#include <stdarg.h>
+#include <stdio.h>
 #include <glog/logging.h>
 #include "sbas_telemetry_data.h"
 #include "sbas_ionospheric_correction.h"
@@ -687,7 +688,7 @@ int Sbas_Telemetry_Data::decode_sbstype7(const sbsmsg_t *msg, sbssat_t *sbssat)
 /* decode type 9: geo navigation message -------------------------------------*/
 int Sbas_Telemetry_Data::decode_sbstype9(const sbsmsg_t *msg, nav_t *nav)
 {
-    seph_t seph = {0};
+    seph_t seph;
     int i;
     int sat;
 
@@ -722,7 +723,7 @@ int Sbas_Telemetry_Data::decode_sbstype9(const sbsmsg_t *msg, nav_t *nav)
     seph.af1 = getbits(msg->msg, 218, 8)*P2_39/2.0;
 
     i = msg->prn-MINPRNSBS;
-    if (!nav->seph || fabs(nav->seph[i].t0 - seph.t0) < 1E-3)
+    if (std::abs(nav->seph[i].t0 - seph.t0) < 1E-3)
         { /* not change */
             VLOG(FLOW) << "<<T>> no change in ephemeris -> won't parse";
             return 0;

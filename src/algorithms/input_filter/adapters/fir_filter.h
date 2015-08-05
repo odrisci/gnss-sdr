@@ -7,7 +7,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -17,7 +17,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -38,11 +38,18 @@
 #include <vector>
 #include <gnuradio/gr_complex.h>
 #include <gnuradio/blocks/file_sink.h>
+#include <gnuradio/blocks/float_to_char.h>
+#include <gnuradio/blocks/float_to_complex.h>
+#include <gnuradio/blocks/float_to_short.h>
 #include <gnuradio/filter/fir_filter_ccf.h>
+#include <gnuradio/filter/fir_filter_fff.h>
 #include <gnuradio/msg_queue.h>
 #include "gnss_synchro.h"
 #include "gnss_block_interface.h"
-
+#include "complex_byte_to_float_x2.h"
+#include "byte_x2_to_complex_byte.h"
+#include "short_x2_to_cshort.h"
+#include "cshort_to_float_x2.h"
 
 class ConfigurationInterface;
 
@@ -100,6 +107,18 @@ private:
     boost::shared_ptr<gr::msg_queue> queue_;
     gr::blocks::file_sink::sptr file_sink_;
     void init();
+    complex_byte_to_float_x2_sptr cbyte_to_float_x2_;
+    gr::filter::fir_filter_fff::sptr fir_filter_fff_1_;
+    gr::filter::fir_filter_fff::sptr fir_filter_fff_2_;
+    gr::blocks::float_to_char::sptr float_to_char_1_;
+    gr::blocks::float_to_char::sptr float_to_char_2_;
+    byte_x2_to_complex_byte_sptr char_x2_cbyte_;
+    gr::blocks::float_to_complex::sptr float_to_complex_;
+    cshort_to_float_x2_sptr cshort_to_float_x2_;
+    gr::blocks::float_to_short::sptr float_to_short_1_;
+    gr::blocks::float_to_short::sptr float_to_short_2_;
+    short_x2_to_cshort_sptr short_x2_to_cshort_;
+
 };
 
 #endif

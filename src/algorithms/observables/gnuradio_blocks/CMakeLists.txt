@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2014  (see AUTHORS file for a list of contributors)
+# Copyright (C) 2012-2015  (see AUTHORS file for a list of contributors)
 #
 # This file is part of GNSS-SDR.
 #
@@ -20,6 +20,7 @@ set(OBS_GR_BLOCKS_SOURCES
 	gps_l1_ca_observables_cc.cc 
 	galileo_e1_observables_cc.cc
 	hybrid_observables_cc.cc
+	mixed_observables_cc.cc
 )
 
 include_directories(

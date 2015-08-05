@@ -5,7 +5,7 @@
  * \author Javier Arribas, 2011. jarribas(at)cttc.es
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -15,7 +15,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -38,7 +38,7 @@ using google::LogMessage;
 
 DEFINE_bool(tropo, true, "Apply tropospheric correction");
 
-gps_l1_ca_ls_pvt::gps_l1_ca_ls_pvt(int nchannels,std::string dump_filename, bool flag_dump_to_file)
+gps_l1_ca_ls_pvt::gps_l1_ca_ls_pvt(int nchannels, std::string dump_filename, bool flag_dump_to_file)
 {
     // init empty ephemeris for all the available GNSS channels
     d_nchannels = nchannels;
@@ -48,6 +48,24 @@ gps_l1_ca_ls_pvt::gps_l1_ca_ls_pvt(int nchannels,std::string dump_filename, bool
     d_averaging_depth = 0;
     d_GPS_current_time = 0;
     b_valid_position = false;
+
+    d_valid_observations = 0;
+    d_latitude_d = 0.0;
+    d_longitude_d = 0.0;
+    d_height_m = 0.0;
+    d_avg_latitude_d = 0.0;
+    d_avg_longitude_d = 0.0;
+    d_avg_height_m = 0.0;
+    d_x_m = 0.0;
+    d_y_m = 0.0;
+    d_z_m = 0.0;
+    d_GDOP = 0.0;
+    d_PDOP = 0.0;
+    d_HDOP = 0.0;
+    d_VDOP = 0.0;
+    d_TDOP = 0.0;
+    d_flag_averaging = false;
+
     // ############# ENABLE DATA FILE LOG #################
     if (d_flag_dump_enabled == true)
         {
@@ -81,7 +99,7 @@ gps_l1_ca_ls_pvt::~gps_l1_ca_ls_pvt()
 }
 
 
-arma::vec gps_l1_ca_ls_pvt::rotateSatellite(double traveltime, arma::vec X_sat)
+arma::vec gps_l1_ca_ls_pvt::rotateSatellite(double traveltime, const arma::vec & X_sat)
 {
     /*
      *  Returns rotated satellite ECEF coordinates due to Earth
@@ -118,7 +136,7 @@ arma::vec gps_l1_ca_ls_pvt::rotateSatellite(double traveltime, arma::vec X_sat)
 }
 
 
-arma::vec gps_l1_ca_ls_pvt::leastSquarePos(arma::mat satpos, arma::vec obs, arma::mat w)
+arma::vec gps_l1_ca_ls_pvt::leastSquarePos(const arma::mat & satpos, const arma::vec & obs, const arma::mat & w)
 {
     /* Computes the Least Squares Solution.
      *   Inputs:
@@ -289,7 +307,7 @@ bool gps_l1_ca_ls_pvt::get_PVT(std::map<int,Gnss_Synchro> gnss_pseudoranges_map,
                     valid_obs++;
 
                     // SV ECEF DEBUG OUTPUT
-                    LOG(INFO) << "(new)ECEF satellite SV ID=" << gps_ephemeris_iter->second.i_satellite_PRN
+                    DLOG(INFO) << "(new)ECEF satellite SV ID=" << gps_ephemeris_iter->second.i_satellite_PRN
                             << " X=" << gps_ephemeris_iter->second.d_satpos_X
                             << " [m] Y=" << gps_ephemeris_iter->second.d_satpos_Y
                             << " [m] Z=" << gps_ephemeris_iter->second.d_satpos_Z
@@ -318,11 +336,11 @@ bool gps_l1_ca_ls_pvt::get_PVT(std::map<int,Gnss_Synchro> gnss_pseudoranges_map,
     if (valid_obs >= 4)
         {
             arma::vec mypos;
-            LOG(INFO) << "satpos=" << satpos;
-            LOG(INFO) << "obs=" << obs;
-            LOG(INFO) << "W=" << W;
+            DLOG(INFO) << "satpos=" << satpos;
+            DLOG(INFO) << "obs=" << obs;
+            DLOG(INFO) << "W=" << W;
             mypos = leastSquarePos(satpos, obs, W);
-            LOG(INFO) << "(new)Position at TOW=" << GPS_current_time << " in ECEF (X,Y,Z) = " << mypos;
+            DLOG(INFO) << "(new)Position at TOW=" << GPS_current_time << " in ECEF (X,Y,Z) = " << mypos;
             gps_l1_ca_ls_pvt::cart2geo(mypos(0), mypos(1), mypos(2), 4);
             //ToDo: Find an Observables/PVT random bug with some satellite configurations that gives an erratic PVT solution (i.e. height>50 km)
             if (d_height_m > 50000)
@@ -489,24 +507,24 @@ void gps_l1_ca_ls_pvt::cart2geo(double X, double Y, double Z, int elipsoid_selec
                  4. World Geodetic System 1984
      */
 
-    const double a[5] = {6378388, 6378160, 6378135, 6378137, 6378137};
-    const double f[5] = {1/297, 1/298.247, 1/298.26, 1/298.257222101, 1/298.257223563};
+    const double a[5] = {6378388.0, 6378160.0, 6378135.0, 6378137.0, 6378137.0};
+    const double f[5] = {1.0 / 297.0, 1.0 / 298.247, 1.0 / 298.26, 1.0 / 298.257222101, 1.0 / 298.257223563};
 
     double lambda  = atan2(Y,X);
-    double ex2 = (2 - f[elipsoid_selection]) * f[elipsoid_selection] / ((1 - f[elipsoid_selection])*(1 - f[elipsoid_selection]));
-    double c = a[elipsoid_selection] * sqrt(1 + ex2);
-    double phi = atan(Z / ((sqrt(X*X + Y*Y)*(1 - (2 - f[elipsoid_selection])) * f[elipsoid_selection])));
+    double ex2 = (2.0 - f[elipsoid_selection]) * f[elipsoid_selection] / ((1.0 - f[elipsoid_selection]) * (1.0 - f[elipsoid_selection]));
+    double c = a[elipsoid_selection] * sqrt(1.0 + ex2);
+    double phi = atan(Z / ((sqrt(X * X + Y * Y) * (1.0 - (2.0 - f[elipsoid_selection])) * f[elipsoid_selection])));
 
     double h = 0.1;
-    double oldh = 0;
+    double oldh = 0.0;
     double N;
     int iterations = 0;
     do
         {
             oldh = h;
             N = c / sqrt(1 + ex2 * (cos(phi) * cos(phi)));
-            phi = atan(Z / ((sqrt(X*X + Y*Y) * (1 - (2 -f[elipsoid_selection]) * f[elipsoid_selection] *N / (N + h) ))));
-            h = sqrt(X*X + Y*Y) / cos(phi) - N;
+            phi = atan(Z / ((sqrt(X*X + Y*Y) * (1.0 - (2.0 -f[elipsoid_selection]) * f[elipsoid_selection] * N / (N + h) ))));
+            h = sqrt(X * X + Y * Y) / cos(phi) - N;
             iterations = iterations + 1;
             if (iterations > 100)
                 {
@@ -514,9 +532,9 @@ void gps_l1_ca_ls_pvt::cart2geo(double X, double Y, double Z, int elipsoid_selec
                     break;
                 }
         }
-    while (abs(h - oldh) > 1.0e-12);
+    while (std::abs(h - oldh) > 1.0e-12);
     d_latitude_d = phi * 180.0 / GPS_PI;
-    d_longitude_d = lambda * 180 / GPS_PI;
+    d_longitude_d = lambda * 180.0 / GPS_PI;
     d_height_m = h;
 }
 
@@ -586,7 +604,7 @@ void gps_l1_ca_ls_pvt::togeod(double *dphi, double *dlambda, double *h, double a
         }
     else
         {
-            sinphi = 0;
+            sinphi = 0.0;
         }
     *dphi = asin(sinphi);
 
@@ -605,7 +623,7 @@ void gps_l1_ca_ls_pvt::togeod(double *dphi, double *dlambda, double *h, double a
     double N_phi;
     double dP;
     double dZ;
-    double oneesq = 1 - esq;
+    double oneesq = 1.0 - esq;
 
     for (int i = 0; i < maxit; i++)
         {
@@ -637,7 +655,7 @@ void gps_l1_ca_ls_pvt::togeod(double *dphi, double *dlambda, double *h, double a
 }
 
 
-void gps_l1_ca_ls_pvt::topocent(double *Az, double *El, double *D, arma::vec x, arma::vec dx)
+void gps_l1_ca_ls_pvt::topocent(double *Az, double *El, double *D, const arma::vec & x, const arma::vec & dx)
 {
     /*  Transformation of vector dx into topocentric coordinate
 	system with origin at x

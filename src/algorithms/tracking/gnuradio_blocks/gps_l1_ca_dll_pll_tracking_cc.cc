@@ -11,7 +11,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -41,6 +41,7 @@
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <gnuradio/io_signature.h>
+#include <gnuradio/fxpt.h>  // fixed point sine and cosine
 #include <glog/logging.h>
 #include "gnss_synchro.h"
 #include "gps_sdr_signal_processing.h"
@@ -162,6 +163,20 @@ Gps_L1_Ca_Dll_Pll_Tracking_cc::Gps_L1_Ca_Dll_Pll_Tracking_cc(
 
     systemName["G"] = std::string("GPS");
     systemName["S"] = std::string("SBAS");
+
+
+    set_relative_rate(1.0/((double)d_vector_length*2));
+
+    d_channel_internal_queue = 0;
+    d_acquisition_gnss_synchro = 0;
+    d_channel = 0;
+    d_acq_code_phase_samples = 0.0;
+    d_acq_carrier_doppler_hz = 0.0;
+    d_carrier_doppler_hz = 0.0;
+    d_acc_carrier_phase_rad = 0.0;
+    d_code_phase_samples = 0.0;
+    d_acc_code_phase_secs = 0.0;
+    //set_min_output_buffer((long int)300);
 }
 
 
@@ -177,7 +192,7 @@ void Gps_L1_Ca_Dll_Pll_Tracking_cc::start_tracking()
     long int acq_trk_diff_samples;
     float acq_trk_diff_seconds;
     acq_trk_diff_samples = static_cast<long int>(d_sample_counter) - static_cast<long int>(d_acq_sample_stamp);//-d_vector_length;
-    LOG(INFO) << "Number of samples between Acquisition and Tracking =" << acq_trk_diff_samples;
+    DLOG(INFO) << "Number of samples between Acquisition and Tracking =" << acq_trk_diff_samples;
     acq_trk_diff_seconds = static_cast<float>(acq_trk_diff_samples) / static_cast<float>(d_fs_in);
     //doppler effect
     // Fd=(C/(C+Vr))*F
@@ -281,14 +296,16 @@ void Gps_L1_Ca_Dll_Pll_Tracking_cc::update_local_code()
 
 void Gps_L1_Ca_Dll_Pll_Tracking_cc::update_local_carrier()
 {
-    float phase_rad, phase_step_rad;
+    float sin_f, cos_f;
+    float phase_step_rad = static_cast<float>(GPS_TWO_PI) * d_carrier_doppler_hz / static_cast<float>(d_fs_in);
+    int phase_step_rad_i = gr::fxpt::float_to_fixed(phase_step_rad);
+    int phase_rad_i = gr::fxpt::float_to_fixed(d_rem_carr_phase_rad);
 
-    phase_step_rad = static_cast<float>(GPS_TWO_PI) * d_carrier_doppler_hz / static_cast<float>(d_fs_in);
-    phase_rad = d_rem_carr_phase_rad;
     for(int i = 0; i < d_current_prn_length_samples; i++)
         {
-            d_carr_sign[i] = gr_complex(cos(phase_rad), -sin(phase_rad));
-            phase_rad += phase_step_rad;
+            gr::fxpt::sincos(phase_rad_i, &sin_f, &cos_f);
+            d_carr_sign[i] = std::complex<float>(cos_f, -sin_f);
+            phase_rad_i += phase_step_rad_i;
         }
     //d_rem_carr_phase_rad = fmod(phase_rad, GPS_TWO_PI);
     //d_acc_carrier_phase_rad = d_acc_carrier_phase_rad + d_rem_carr_phase_rad;
@@ -324,6 +341,14 @@ int Gps_L1_Ca_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_in
     float code_error_chips;
     float code_error_filt_chips;
 
+    // Block input data and block output stream pointers
+    const gr_complex* in = (gr_complex*) input_items[0]; //PRN start block alignment
+    Gnss_Synchro **out = (Gnss_Synchro **) &output_items[0];
+
+    // GNSS_SYNCHRO OBJECT to interchange data between tracking->telemetry_decoder
+    Gnss_Synchro current_synchro_data = Gnss_Synchro();
+
+
     if (d_enable_tracking == true)
         {
             // Receiver signal alignment
@@ -340,18 +365,15 @@ int Gps_L1_Ca_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_in
                     d_sample_counter = d_sample_counter + samples_offset; //count for the processed samples
                     d_pull_in = false;
                     //std::cout<<" samples_offset="<<samples_offset<<"\r\n";
+                    // Fill the acquisition data
+                    current_synchro_data = *d_acquisition_gnss_synchro;
+                    *out[0] = current_synchro_data;
                     consume_each(samples_offset); //shift input to perform alignment with local replica
                     return 1;
                 }
 
-            // GNSS_SYNCHRO OBJECT to interchange data between tracking->telemetry_decoder
-            Gnss_Synchro current_synchro_data;
             // Fill the acquisition data
             current_synchro_data = *d_acquisition_gnss_synchro;
-
-            // Block input data and block output stream pointers
-            const gr_complex* in = (gr_complex*) input_items[0]; //PRN start block alignment
-            Gnss_Synchro **out = (Gnss_Synchro **) &output_items[0];
 
             // Generate local code and carrier replicas (using \hat{f}_d(k-1))
             update_local_code();
@@ -384,9 +406,9 @@ int Gps_L1_Ca_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_in
                     current_synchro_data.Code_phase_secs = 0.0;
                     current_synchro_data.CN0_dB_hz = 0.0;
                     current_synchro_data.Flag_valid_tracking = false;
+                    current_synchro_data.Flag_valid_pseudorange = false;
 
                     *out[0] = current_synchro_data;
-
                     return 1;
                 }
 
@@ -485,6 +507,7 @@ int Gps_L1_Ca_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_in
             current_synchro_data.Carrier_phase_rads = static_cast<double>(d_acc_carrier_phase_rad);
             current_synchro_data.Carrier_Doppler_hz = static_cast<double>(d_carrier_doppler_hz);
             current_synchro_data.CN0_dB_hz = static_cast<double>(d_CN0_SNV_dB_Hz);
+            current_synchro_data.Flag_valid_pseudorange = false;
             *out[0] = current_synchro_data;
 
             // ########## DEBUG OUTPUT
@@ -498,8 +521,8 @@ int Gps_L1_Ca_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_in
                         {
                             d_last_seg = floor(d_sample_counter / d_fs_in);
                             std::cout << "Current input signal time = " << d_last_seg << " [s]" << std::endl;
-                            LOG(INFO) << "Tracking CH " << d_channel <<  ": Satellite " << Gnss_Satellite(systemName[sys], d_acquisition_gnss_synchro->PRN)
-                                      << ", CN0 = " << d_CN0_SNV_dB_Hz << " [dB-Hz]";
+                            DLOG(INFO) << "GPS L1 C/A Tracking CH " << d_channel <<  ": Satellite " << Gnss_Satellite(systemName[sys], d_acquisition_gnss_synchro->PRN)
+                                      << ", CN0 = " << d_CN0_SNV_dB_Hz << " [dB-Hz]" << std::endl;
                             //if (d_last_seg==5) d_carrier_lock_fail_counter=500; //DEBUG: force unlock!
                         }
                 }
@@ -508,9 +531,8 @@ int Gps_L1_Ca_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_in
                     if (floor(d_sample_counter / d_fs_in) != d_last_seg)
                         {
                             d_last_seg = floor(d_sample_counter / d_fs_in);
-                            LOG(INFO) << "Tracking CH " << d_channel <<  ": Satellite " << Gnss_Satellite(systemName[sys], d_acquisition_gnss_synchro->PRN)
-                                                    << ", CN0 = " << d_CN0_SNV_dB_Hz << " [dB-Hz]";
-                            //std::cout<<"TRK CH "<<d_channel<<" Carrier_lock_test="<<d_carrier_lock_test<< std::endl;
+                            DLOG(INFO) << "Tracking CH " << d_channel <<  ": Satellite " << Gnss_Satellite(systemName[sys], d_acquisition_gnss_synchro->PRN)
+                                       << ", CN0 = " << d_CN0_SNV_dB_Hz << " [dB-Hz]";
                         }
                 }
         }
@@ -536,9 +558,10 @@ int Gps_L1_Ca_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_in
             *d_Early = gr_complex(0,0);
             *d_Prompt = gr_complex(0,0);
             *d_Late = gr_complex(0,0);
-            Gnss_Synchro **out = (Gnss_Synchro **) &output_items[0]; //block output streams pointer
-            // GNSS_SYNCHRO OBJECT to interchange data between tracking->telemetry_decoder
-            *out[0] = *d_acquisition_gnss_synchro;
+
+            current_synchro_data.System = {'G'};
+            current_synchro_data.Flag_valid_pseudorange = false;
+            *out[0] = current_synchro_data;
         }
 
     if(d_dump)

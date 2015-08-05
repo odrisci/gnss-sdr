@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -16,7 +16,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -106,16 +106,20 @@ GalileoE1PcpsAmbiguousAcquisition::GalileoE1PcpsAmbiguousAcquisition(
                     shift_resolution_, if_, fs_in_, samples_per_ms, code_length_,
                     bit_transition_flag_, queue_, dump_, dump_filename_);
             stream_to_vector_ = gr::blocks::stream_to_vector::make(item_size_, vector_length_);
-            DLOG(INFO) << "stream_to_vector("
-                    << stream_to_vector_->unique_id() << ")";
-            DLOG(INFO) << "acquisition(" << acquisition_cc_->unique_id()
-                    << ")";
+            DLOG(INFO) << "stream_to_vector(" << stream_to_vector_->unique_id() << ")";
+            DLOG(INFO) << "acquisition(" << acquisition_cc_->unique_id() << ")";
         }
     else
         {
-            LOG(WARNING) << item_type_
-                    << " unknown acquisition item type";
+            item_size_ = sizeof(gr_complex);
+            LOG(WARNING) << item_type_ << " unknown acquisition item type";
         }
+    gnss_synchro_ = 0;
+    threshold_ = 0.0;
+    doppler_max_ = 5000;
+    doppler_step_ = 250;
+    channel_internal_queue_ = 0;
+    channel_ = 0;
 }
 
 
@@ -265,6 +269,12 @@ GalileoE1PcpsAmbiguousAcquisition::reset()
         {
             acquisition_cc_->set_active(true);
         }
+}
+
+void
+GalileoE1PcpsAmbiguousAcquisition::set_state(int state)
+{
+        acquisition_cc_->set_state(state);
 }
 
 float GalileoE1PcpsAmbiguousAcquisition::calculate_threshold(float pfa)

@@ -24,7 +24,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2012  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -34,7 +34,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -105,7 +105,7 @@ private:
     long d_freq;
     int d_samples_per_ms;
     int d_samples_per_code;
-    unsigned int d_doppler_resolution;
+    //unsigned int d_doppler_resolution;
     float d_threshold;
     std::string d_satellite_str;
     unsigned int d_doppler_max;
@@ -181,6 +181,13 @@ public:
      {
          d_active = active;
      }
+
+     /*!
+      * \brief If set to 1, ensures that acquisition starts at the
+      * first available sample.
+      * \param state - int=1 forces start of acquisition
+      */
+     void set_state(int state);
 
      /*!
       * \brief Set acquisition channel unique ID

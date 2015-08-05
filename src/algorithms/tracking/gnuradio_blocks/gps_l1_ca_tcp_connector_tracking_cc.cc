@@ -12,7 +12,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -22,7 +22,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -174,6 +174,18 @@ Gps_L1_Ca_Tcp_Connector_Tracking_cc::Gps_L1_Ca_Tcp_Connector_Tracking_cc(
     systemName["S"] = std::string("SBAS");
     systemName["E"] = std::string("Galileo");
     systemName["C"] = std::string("Compass");
+
+    d_channel_internal_queue = 0;
+    d_acquisition_gnss_synchro = 0;
+    d_channel = 0;
+    d_next_rem_code_phase_samples = 0;
+    d_acq_code_phase_samples = 0.0;
+    d_acq_carrier_doppler_hz = 0.0;
+    d_carrier_doppler_hz = 0.0;
+    d_acc_carrier_phase_rad = 0.0;
+    d_code_phase_samples = 0;
+    d_next_prn_length_samples = 0;
+    d_code_phase_step_chips = 0.0;
 }
 
 void Gps_L1_Ca_Tcp_Connector_Tracking_cc::start_tracking()
@@ -418,8 +430,9 @@ int Gps_L1_Ca_Tcp_Connector_Tracking_cc::general_work (int noutput_items, gr_vec
                     current_synchro_data.Code_phase_secs = 0.0;
                     current_synchro_data.CN0_dB_hz = 0.0;
                     current_synchro_data.Flag_valid_tracking = false;
+                    current_synchro_data.Flag_valid_pseudorange = false;
 
-                    *out[0] =current_synchro_data;
+                    *out[0] = current_synchro_data;
 
                     return 1;
                 }
@@ -460,7 +473,7 @@ int Gps_L1_Ca_Tcp_Connector_Tracking_cc::general_work (int noutput_items, gr_vec
             T_prn_seconds = T_chip_seconds * GPS_L1_CA_CODE_LENGTH_CHIPS;
             T_prn_samples = T_prn_seconds * (double)d_fs_in;
             d_rem_code_phase_samples = d_next_rem_code_phase_samples;
-            //K_blk_samples = T_prn_samples + d_rem_code_phase_samples;//-code_error*(double)d_fs_in;
+            K_blk_samples = T_prn_samples + d_rem_code_phase_samples;//-code_error*(double)d_fs_in;
 
             // Update the current PRN delay (code phase in samples)
             double T_prn_true_seconds = GPS_L1_CA_CODE_LENGTH_CHIPS / GPS_L1_CA_CODE_RATE_HZ;
@@ -530,6 +543,7 @@ int Gps_L1_Ca_Tcp_Connector_Tracking_cc::general_work (int noutput_items, gr_vec
             current_synchro_data.Carrier_Doppler_hz = (double)d_carrier_doppler_hz;
             current_synchro_data.Code_phase_secs = (double)d_code_phase_samples * (1/(float)d_fs_in);
             current_synchro_data.CN0_dB_hz = (double)d_CN0_SNV_dB_Hz;
+            current_synchro_data.Flag_valid_pseudorange = false;
             *out[0] = current_synchro_data;
 
             // ########## DEBUG OUTPUT
@@ -581,6 +595,7 @@ int Gps_L1_Ca_Tcp_Connector_Tracking_cc::general_work (int noutput_items, gr_vec
             *d_Late = gr_complex(0,0);
             Gnss_Synchro **out = (Gnss_Synchro **) &output_items[0]; //block output streams pointer
             // GNSS_SYNCHRO OBJECT to interchange data between tracking->telemetry_decoder
+            d_acquisition_gnss_synchro->Flag_valid_pseudorange = false;
             *out[0] = *d_acquisition_gnss_synchro;
 
             //! When tracking is disabled an array of 1's is sent to maintain the TCP connection

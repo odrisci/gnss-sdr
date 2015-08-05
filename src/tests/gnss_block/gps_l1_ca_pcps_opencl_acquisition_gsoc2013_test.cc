@@ -7,7 +7,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -17,7 +17,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -62,6 +62,8 @@ protected:
         item_size = sizeof(gr_complex);
         stop = false;
         message = 0;
+        gnss_synchro = Gnss_Synchro();
+        init();
     }
 
     ~GpsL1CaPcpsOpenClAcquisitionGSoC2013Test()
@@ -86,15 +88,15 @@ protected:
     int message;
     boost::thread ch_thread;
 
-    unsigned int integration_time_ms;
-    unsigned int fs_in;
+    unsigned int integration_time_ms = 0;
+    unsigned int fs_in = 0;
 
-    double expected_delay_chips;
-    double expected_doppler_hz;
-    float max_doppler_error_hz;
-    float max_delay_error_chips;
+    double expected_delay_chips = 0.0;
+    double expected_doppler_hz = 0.0;
+    float max_doppler_error_hz = 0;
+    float max_delay_error_chips = 0;
 
-    unsigned int num_of_realizations;
+    unsigned int num_of_realizations = 0;
     unsigned int realization_counter;
     unsigned int detection_counter;
     unsigned int correct_estimation_counter;
@@ -317,8 +319,8 @@ void GpsL1CaPcpsOpenClAcquisitionGSoC2013Test::process_message()
             detection_counter++;
 
             // The term -5 is here to correct the additional delay introduced by the FIR filter
-            double delay_error_chips = abs((double)expected_delay_chips - (double)(gnss_synchro.Acq_delay_samples- 5 )*1023.0/((double)fs_in*1e-3));
-            double doppler_error_hz = abs(expected_doppler_hz - gnss_synchro.Acq_doppler_hz);
+            double delay_error_chips = std::abs((double)expected_delay_chips - (double)(gnss_synchro.Acq_delay_samples- 5 )*1023.0/((double)fs_in*1e-3));
+            double doppler_error_hz = std::abs(expected_doppler_hz - gnss_synchro.Acq_doppler_hz);
 
             mse_delay += std::pow(delay_error_chips, 2);
             mse_doppler += std::pow(doppler_error_hz, 2);

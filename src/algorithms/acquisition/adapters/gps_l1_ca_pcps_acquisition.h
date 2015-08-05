@@ -10,7 +10,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -20,7 +20,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -39,9 +39,12 @@
 #include <string>
 #include <gnuradio/msg_queue.h>
 #include <gnuradio/blocks/stream_to_vector.h>
+#include <gnuradio/blocks/float_to_complex.h>
 #include "gnss_synchro.h"
 #include "acquisition_interface.h"
 #include "pcps_acquisition_cc.h"
+#include "cshort_to_float_x2.h"
+#include "complex_byte_to_float_x2.h"
 
 
 
@@ -134,10 +137,18 @@ public:
      */
     void reset();
 
+    /*!
+     * \brief If state = 1, it forces the block to start acquiring from the first sample
+     */
+    void set_state(int state);
+
 private:
     ConfigurationInterface* configuration_;
     pcps_acquisition_cc_sptr acquisition_cc_;
     gr::blocks::stream_to_vector::sptr stream_to_vector_;
+    gr::blocks::float_to_complex::sptr float_to_complex_;
+    cshort_to_float_x2_sptr cshort_to_float_x2_;
+    complex_byte_to_float_x2_sptr cbyte_to_float_x2_;
     size_t item_size_;
     std::string item_type_;
     unsigned int vector_length_;

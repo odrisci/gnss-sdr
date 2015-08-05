@@ -25,6 +25,11 @@ macro(_FIND_GLOG_LIBRARIES _var)
      find_library(${_var}
           NAMES  ${ARGN}
           PATHS ${LIB_PATHS} /opt/local/lib
+                             /usr/lib/x86_64-linux-gnu
+                             /usr/lib/i386-linux-gnu
+                             /usr/lib/arm-linux-gnueabihf
+                             /usr/lib/arm-linux-gnueabi
+                             /usr/lib/aarch64-linux-gnu
           PATH_SUFFIXES lib
       )
      mark_as_advanced(${_var})
@@ -50,6 +55,7 @@ else(MSVC)
      find_path(GLOG_INCLUDE_DIR NAMES raw_logging.h
      PATHS
      ${GLOG_ROOT}/include/glog
+     /usr/include/glog
      /opt/local/include/glog   # default location in Macports
      )
 endif(MSVC)

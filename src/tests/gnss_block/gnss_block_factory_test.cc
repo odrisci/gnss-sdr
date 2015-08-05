@@ -10,7 +10,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -35,6 +35,7 @@
 
 #include <vector>
 #include <gnuradio/msg_queue.h>
+#include <gtest/gtest.h>
 #include "in_memory_configuration.h"
 #include "gnss_block_interface.h"
 #include "acquisition_interface.h"
@@ -57,25 +58,27 @@ TEST(GNSS_Block_Factory_Test, InstantiateFileSignalSource)
     std::shared_ptr<GNSSBlockFactory> factory = std::make_shared<GNSSBlockFactory>();
     // Example of a block as a shared_ptr
     std::shared_ptr<GNSSBlockInterface> signal_source = factory->GetSignalSource(configuration, queue);
-    LOG(INFO) << "signal source created";
     EXPECT_STREQ("SignalSource", signal_source->role().c_str());
     EXPECT_STREQ("File_Signal_Source", signal_source->implementation().c_str());
 }
 
-
+/*
 TEST(GNSS_Block_Factory_Test, InstantiateUHDSignalSource)
 {
     std::shared_ptr<InMemoryConfiguration> configuration = std::make_shared<InMemoryConfiguration>();
     configuration->set_property("SignalSource.implementation", "UHD_Signal_Source");
+    configuration->set_property("SignalSource.item_type", "gr_complex");
+    configuration->set_property("SignalSource.device_address", "192.168.40.2");
     gr::msg_queue::sptr queue = gr::msg_queue::make(0);
     // Example of a factory created with auto
     auto factory = new GNSSBlockFactory();
     // Example of a block created with auto
     auto signal_source = factory->GetSignalSource(configuration, queue);
+
     EXPECT_STREQ("SignalSource", signal_source->role().c_str());
     EXPECT_STREQ("UHD_Signal_Source", signal_source->implementation().c_str());
 }
-
+*/
 
 TEST(GNSS_Block_Factory_Test, InstantiateWrongSignalSource)
 {

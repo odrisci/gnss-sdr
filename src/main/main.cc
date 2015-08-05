@@ -8,7 +8,7 @@
 *
 * -------------------------------------------------------------------------
 *
-* Copyright (C) 2010-2014 (see AUTHORS file for a list of contributors)
+* Copyright (C) 2010-2015 (see AUTHORS file for a list of contributors)
 *
 * GNSS-SDR is a software defined Global Navigation
 * Satellite Systems receiver
@@ -31,17 +31,21 @@
 * -------------------------------------------------------------------------
 */
 #ifndef GNSS_SDR_VERSION
-#define GNSS_SDR_VERSION "0.0.2"
+#define GNSS_SDR_VERSION "0.0.5"
+#endif
+
+#ifndef GOOGLE_STRIP_LOG
+#define GOOGLE_STRIP_LOG 0
 #endif
 
 #include <ctime>
+#include <cstdlib>
 #include <memory>
 #include <queue>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/exception_ptr.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
+#include <boost/thread.hpp>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <gnuradio/msg_queue.h>
@@ -49,8 +53,10 @@
 #include "concurrent_queue.h"
 #include "concurrent_map.h"
 #include "gps_ephemeris.h"
+#include "gps_cnav_ephemeris.h"
 #include "gps_almanac.h"
 #include "gps_iono.h"
+#include "gps_cnav_iono.h"
 #include "gps_utc_model.h"
 #include "galileo_ephemeris.h"
 #include "galileo_almanac.h"
@@ -76,7 +82,7 @@ DECLARE_string(log_dir);
 * to the Observables modules
 */
 
-// For GPS NAVIGATION
+// For GPS NAVIGATION (L1)
 concurrent_queue<Gps_Ephemeris> global_gps_ephemeris_queue;
 concurrent_queue<Gps_Iono> global_gps_iono_queue;
 concurrent_queue<Gps_Utc_Model> global_gps_utc_model_queue;
@@ -92,6 +98,12 @@ concurrent_map<Gps_Almanac> global_gps_almanac_map;
 concurrent_map<Gps_Acq_Assist> global_gps_acq_assist_map;
 concurrent_map<Gps_Ref_Time> global_gps_ref_time_map;
 concurrent_map<Gps_Ref_Location> global_gps_ref_location_map;
+
+// For GPS NAVIGATION (L2)
+concurrent_queue<Gps_CNAV_Ephemeris> global_gps_cnav_ephemeris_queue;
+concurrent_map<Gps_CNAV_Ephemeris> global_gps_cnav_ephemeris_map;
+concurrent_queue<Gps_CNAV_Iono> global_gps_cnav_iono_queue;
+concurrent_map<Gps_CNAV_Iono> global_gps_cnav_iono_map;
 
 // For GALILEO NAVIGATION
 concurrent_queue<Galileo_Ephemeris> global_galileo_ephemeris_queue;
@@ -119,7 +131,7 @@ int main(int argc, char** argv)
     const std::string intro_help(
             std::string("\nGNSS-SDR is an Open Source GNSS Software Defined Receiver\n")
     +
-    "Copyright (C) 2010-2014 (see AUTHORS file for a list of contributors)\n"
+    "Copyright (C) 2010-2015 (see AUTHORS file for a list of contributors)\n"
     +
     "This program comes with ABSOLUTELY NO WARRANTY;\n"
     +
@@ -131,28 +143,37 @@ int main(int argc, char** argv)
     google::ParseCommandLineFlags(&argc, &argv, true);
     std::cout << "Initializing GNSS-SDR v" << gnss_sdr_version << " ... Please wait." << std::endl;
 
-    google::InitGoogleLogging(argv[0]);
-    if (FLAGS_log_dir.empty())
+    if(GOOGLE_STRIP_LOG == 0)
         {
-            std::cout << "Logging will be done at "
-                << boost::filesystem::temp_directory_path()
-                << std::endl
-                << "Use gnss-sdr --log_dir=/path/to/log to change that."
-                << std::endl;
-        }
-    else
-        {
-            const boost::filesystem::path p (FLAGS_log_dir);
-            if (!boost::filesystem::exists(p))
+            google::InitGoogleLogging(argv[0]);
+            if (FLAGS_log_dir.empty())
                 {
-                    std::cout << "The path "
-                        << FLAGS_log_dir
-                        << " does not exist, attempting to create it"
-                        << std::endl;
-                    boost::filesystem::create_directory(p);
+                    std::cout << "Logging will be done at "
+                              << boost::filesystem::temp_directory_path()
+                              << std::endl
+                              << "Use gnss-sdr --log_dir=/path/to/log to change that."
+                              << std::endl;
                 }
-            std::cout << "Logging with be done at "
-                      << FLAGS_log_dir << std::endl;
+            else
+                {
+                    const boost::filesystem::path p (FLAGS_log_dir);
+                    if (!boost::filesystem::exists(p))
+                        {
+                            std::cout << "The path "
+                                      << FLAGS_log_dir
+                                      << " does not exist, attempting to create it."
+                                      << std::endl;
+                            boost::system::error_code ec;
+                            boost::filesystem::create_directory(p, ec);
+                            if(ec != 0)
+                                {
+                                    std::cout << "Could not create the " << FLAGS_log_dir << " folder. GNSS-SDR program ended." << std::endl;
+                                    google::ShutDownCommandLineFlags();
+                                    std::exit(0);
+                                }
+                        }
+                    std::cout << "Logging with be done at " << FLAGS_log_dir << std::endl;
+                }
         }
 
     std::unique_ptr<ControlThread> control_thread(new ControlThread());
@@ -173,6 +194,10 @@ int main(int argc, char** argv)
     catch(std::exception const&  ex)
     {
             LOG(FATAL) << "STD exception: " << ex.what();
+    }
+    catch(...)
+    {
+            LOG(INFO) << "Unexpected catch";
     }
     // report the elapsed time
     gettimeofday(&tv, NULL);

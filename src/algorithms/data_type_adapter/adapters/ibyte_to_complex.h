@@ -1,11 +1,11 @@
 /*!
- * \file byte_to_complex.h
+ * \file ibyte_to_complex.h
  * \brief Adapts an I/Q interleaved byte integer sample stream to a gr_complex (float) stream
  * \author Javier Arribas, jarribas(at)cttc.es
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -15,7 +15,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,8 +28,8 @@
  * -------------------------------------------------------------------------
  */
 
-#ifndef GNSS_SDR_BYTE_TO_COMPLEX_H_
-#define GNSS_SDR_BYTE_TO_COMPLEX_H_
+#ifndef GNSS_SDR_IBYTE_TO_COMPLEX_H_
+#define GNSS_SDR_IBYTE_TO_COMPLEX_H_
 
 #include <string>
 #include <gnuradio/blocks/interleaved_short_to_complex.h>
@@ -59,10 +59,10 @@ public:
     {
         return role_;
     }
-    //! Returns "IbyteToComplex"
+    //! Returns "Ibyte_To_Complex"
     std::string implementation()
     {
-        return "IbyteToComplex";
+        return "Ibyte_To_Complex";
     }
     size_t item_size()
     {
@@ -90,3 +90,5 @@ private:
 };
 
 #endif
+
+

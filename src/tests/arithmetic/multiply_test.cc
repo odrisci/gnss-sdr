@@ -7,7 +7,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -17,7 +17,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -59,16 +59,17 @@ TEST(Multiply_Test, StandardCDoubleImplementation)
     std::cout << "Element-wise multiplication of " << FLAGS_size_multiply_test
               << " doubles in standard C finished in " << (end - begin)
               << " microseconds" << std::endl;
-    ASSERT_LE(0, end - begin);
+
     double acc = 0;
     double expected = 0;
     for(int i = 0; i < FLAGS_size_multiply_test; i++)
         {
             acc += output[i];
         }
+    delete[] input;
+    delete[] output;
+    ASSERT_LE(0, end - begin);
     ASSERT_EQ(expected, acc);
-    delete [] input;
-    delete [] output;
 }
 
 
@@ -113,17 +114,17 @@ TEST(Multiply_Test, StandardCComplexImplementation)
     std::cout << "Element-wise multiplication of " << FLAGS_size_multiply_test
               << " complex<float> in standard C finished in " << (end - begin)
               << " microseconds" << std::endl;
-    ASSERT_LE(0, end - begin);
+
     std::complex<float> expected(0,0);
     std::complex<float> result(0,0);
     for(int i = 0; i < FLAGS_size_multiply_test; i++)
          {
              result += output[i];
          }
-
+    delete[] input;
+    delete[] output;
+    ASSERT_LE(0, end - begin);
     ASSERT_EQ(expected, result);
-    delete [] input;
-    delete [] output;
 }
 
 

@@ -11,7 +11,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -191,6 +191,15 @@ gr::block("galileo_volk_e1_dll_pll_veml_tracking_cc", gr::io_signature::make(1, 
     *d_Prompt = gr_complex(0,0);
     *d_Late = gr_complex(0,0);
     *d_Very_Late = gr_complex(0,0);
+
+    d_channel_internal_queue = 0;
+    d_acquisition_gnss_synchro = 0;
+    d_channel = 0;
+    d_acq_code_phase_samples = 0.0;
+    d_acq_carrier_doppler_hz = 0.0;
+    d_carrier_doppler_hz = 0.0;
+    d_acc_carrier_phase_rad = 0.0;
+    d_acc_code_phase_secs = 0.0;
 }
 
 void galileo_volk_e1_dll_pll_veml_tracking_cc::start_tracking()
@@ -356,7 +365,7 @@ int galileo_volk_e1_dll_pll_veml_tracking_cc::general_work (int noutput_items,gr
         }
         
         // GNSS_SYNCHRO OBJECT to interchange data between tracking->telemetry_decoder
-        Gnss_Synchro current_synchro_data;
+        Gnss_Synchro current_synchro_data = Gnss_Synchro();
         // Fill the acquisition data
         current_synchro_data = *d_acquisition_gnss_synchro;
         
@@ -501,6 +510,7 @@ int galileo_volk_e1_dll_pll_veml_tracking_cc::general_work (int noutput_items,gr
         current_synchro_data.Carrier_phase_rads = static_cast<double>(d_acc_carrier_phase_rad);
         current_synchro_data.Carrier_Doppler_hz = static_cast<double>(d_carrier_doppler_hz);
         current_synchro_data.CN0_dB_hz = static_cast<double>(d_CN0_SNV_dB_Hz);
+        current_synchro_data.Flag_valid_pseudorange = false;
         *out[0] = current_synchro_data;
         
         // ########## DEBUG OUTPUT
@@ -549,7 +559,8 @@ int galileo_volk_e1_dll_pll_veml_tracking_cc::general_work (int noutput_items,gr
         *d_Prompt = gr_complex(0,0);
         *d_Late = gr_complex(0,0);
         Gnss_Synchro **out = (Gnss_Synchro **) &output_items[0]; //block output stream pointer
-        // GNSS_SYNCHRO OBJECT to interchange data between tracking->telemetry_decoder
+        // GNSS_SYNCHRO OBJECTto interchange data between tracking->telemetry_decoder
+        d_acquisition_gnss_synchro->Flag_valid_pseudorange = false;
         *out[0] = *d_acquisition_gnss_synchro;
     }
     

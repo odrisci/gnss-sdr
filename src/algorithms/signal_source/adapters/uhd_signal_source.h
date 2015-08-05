@@ -5,7 +5,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -15,7 +15,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -76,34 +76,36 @@ public:
     void disconnect(gr::top_block_sptr top_block);
     gr::basic_block_sptr get_left_block();
     gr::basic_block_sptr get_right_block();
+    gr::basic_block_sptr get_right_block(int RF_channel);
 
 private:
 
     std::string role_;
-
-    // UHD SETTINGS
-    std::string device_address_;
-    std::string subdevice_;
-    double sample_rate_;
-
     unsigned int in_stream_;
     unsigned int out_stream_;
-
-    double freq_;
-    double gain_;
-    double IF_bandwidth_hz_;
-    std::string item_type_;
-    size_t item_size_;
-    long samples_;
-    bool dump_;
-    std::string dump_filename_;
-
-    //boost::shared_ptr<uhd_usrp_source> uhd_source_;
     gr::uhd::usrp_source::sptr uhd_source_;
 
-    boost::shared_ptr<gr::block> valve_;
-    //gr_block_sptr file_sink_;
-    gr::blocks::file_sink::sptr file_sink_;
+    // UHD SETTINGS
+    uhd::stream_args_t uhd_stream_args_;
+    std::string device_address_;
+    double sample_rate_;
+    int RF_channels_;
+    std::string item_type_;
+    size_t item_size_;
+
+    std::string subdevice_;
+    std::string clock_source_;
+
+    std::vector<double> freq_;
+    std::vector<double> gain_;
+    std::vector<double> IF_bandwidth_hz_;
+    std::vector<long> samples_;
+    std::vector<bool> dump_;
+    std::vector<std::string> dump_filename_;
+
+    std::vector<boost::shared_ptr<gr::block>> valve_;
+    std::vector<gr::blocks::file_sink::sptr> file_sink_;
+
     boost::shared_ptr<gr::msg_queue> queue_;
 };
 

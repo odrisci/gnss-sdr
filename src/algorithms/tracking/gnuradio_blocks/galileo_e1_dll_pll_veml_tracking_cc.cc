@@ -11,7 +11,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -41,6 +41,7 @@
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <gnuradio/io_signature.h>
+#include <gnuradio/fxpt.h>  // fixed point sine and cosine
 #include <glog/logging.h>
 #include "gnss_synchro.h"
 #include "galileo_e1_signal_processing.h"
@@ -173,6 +174,15 @@ galileo_e1_dll_pll_veml_tracking_cc::galileo_e1_dll_pll_veml_tracking_cc(
     *d_Prompt = gr_complex(0,0);
     *d_Late = gr_complex(0,0);
     *d_Very_Late = gr_complex(0,0);
+
+    d_channel_internal_queue = 0;
+    d_acquisition_gnss_synchro = 0;
+    d_channel = 0;
+    d_acq_code_phase_samples = 0.0;
+    d_acq_carrier_doppler_hz = 0.0;
+    d_carrier_doppler_hz = 0.0;
+    d_acc_carrier_phase_rad = 0.0;
+    d_acc_code_phase_secs = 0.0;
 }
 
 void galileo_e1_dll_pll_veml_tracking_cc::start_tracking()
@@ -259,17 +269,19 @@ void galileo_e1_dll_pll_veml_tracking_cc::update_local_code()
     memcpy(d_very_late_code, &d_very_early_code[2 * very_early_late_spc_samples], d_current_prn_length_samples * sizeof(gr_complex));
 }
 
+
 void galileo_e1_dll_pll_veml_tracking_cc::update_local_carrier()
 {
-    float phase_rad, phase_step_rad;
-    // Compute the carrier phase step for the K-1 carrier doppler estimation
-    phase_step_rad = static_cast<float>(GPS_TWO_PI) * d_carrier_doppler_hz / static_cast<float>(d_fs_in);
-    // Initialize the carrier phase with the remanent carrier phase of the K-2 loop
-    phase_rad = d_rem_carr_phase_rad;
+    float sin_f, cos_f;
+    float phase_step_rad = static_cast<float>(2 * GALILEO_PI) * d_carrier_doppler_hz / static_cast<float>(d_fs_in);
+    int phase_step_rad_i = gr::fxpt::float_to_fixed(phase_step_rad);
+    int phase_rad_i = gr::fxpt::float_to_fixed(d_rem_carr_phase_rad);
+
     for(int i = 0; i < d_current_prn_length_samples; i++)
         {
-            d_carr_sign[i] = gr_complex(cos(phase_rad), -sin(phase_rad));
-            phase_rad += phase_step_rad;
+            gr::fxpt::sincos(phase_rad_i, &sin_f, &cos_f);
+            d_carr_sign[i] = std::complex<float>(cos_f, -sin_f);
+            phase_rad_i += phase_step_rad_i;
         }
 }
 
@@ -451,6 +463,7 @@ int galileo_e1_dll_pll_veml_tracking_cc::general_work (int noutput_items,gr_vect
             current_synchro_data.Carrier_phase_rads = static_cast<double>(d_acc_carrier_phase_rad);
             current_synchro_data.Carrier_Doppler_hz = static_cast<double>(d_carrier_doppler_hz);
             current_synchro_data.CN0_dB_hz = static_cast<double>(d_CN0_SNV_dB_Hz);
+            current_synchro_data.Flag_valid_pseudorange = false;
             *out[0] = current_synchro_data;
 
             // ########## DEBUG OUTPUT
@@ -500,6 +513,7 @@ int galileo_e1_dll_pll_veml_tracking_cc::general_work (int noutput_items,gr_vect
     	*d_Late = gr_complex(0,0);
     	Gnss_Synchro **out = (Gnss_Synchro **) &output_items[0]; //block output stream pointer
     	// GNSS_SYNCHRO OBJECT to interchange data between tracking->telemetry_decoder
+        d_acquisition_gnss_synchro->Flag_valid_pseudorange = false;
     	*out[0] = *d_acquisition_gnss_synchro;
     }
 

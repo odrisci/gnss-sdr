@@ -7,7 +7,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -17,7 +17,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -38,6 +38,7 @@
 #include <exception>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+#include <volk/volk.h>
 #include "gnss_sdr_valve.h"
 #include "configuration_interface.h"
 
@@ -70,7 +71,7 @@ FileSignalSource::FileSignalSource(ConfigurationInterface* configuration,
     dump_filename_ = configuration->property(role + ".dump_filename", default_dump_filename);
     enable_throttle_control_ = configuration->property(role + ".enable_throttle_control", false);
     std::string s = "InputFilter";
-    double IF = configuration->property(s + ".IF", 0.0);
+    //double IF = configuration->property(s + ".IF", 0.0);
 
     if (item_type_.compare("gr_complex") == 0)
         {
@@ -82,11 +83,19 @@ FileSignalSource::FileSignalSource(ConfigurationInterface* configuration,
         }
     else if (item_type_.compare("short") == 0)
         {
-            item_size_ = sizeof(short int);
+            item_size_ = sizeof(int16_t);
+        }
+    else if (item_type_.compare("ishort") == 0)
+        {
+            item_size_ = sizeof(int16_t);
         }
     else if (item_type_.compare("byte") == 0)
         {
-    		item_size_ = sizeof(char);
+    		item_size_ = sizeof(int8_t);
+        }
+    else if (item_type_.compare("ibyte") == 0)
+        {
+    		item_size_ = sizeof(int8_t);
         }
     else
         {
@@ -153,7 +162,7 @@ FileSignalSource::FileSignalSource(ConfigurationInterface* configuration,
             if (file.is_open())
                 {
                     size = file.tellg();
-                    DLOG(INFO) << "Total samples in the file= " << floor((double)size / (double)item_size());
+                    DLOG(INFO) << "Total samples in the file= " << floor(static_cast<double>(size) / static_cast<double>(item_size()));
                 }
             else
                 {
@@ -161,19 +170,19 @@ FileSignalSource::FileSignalSource(ConfigurationInterface* configuration,
                     LOG(ERROR) << "file_signal_source: Unable to open the samples file " << filename_.c_str();
                 }
             std::cout << std::setprecision(16);
-            std::cout << "Processing file " << filename_ << ", which contains " << (double)size << " [bytes]" << std::endl;
+            std::cout << "Processing file " << filename_ << ", which contains " << static_cast<double>(size) << " [bytes]" << std::endl;
 
             if (size > 0)
                 {
-                    samples_ = floor((double)size / (double)item_size() - ceil(0.002 * (double)sampling_frequency_)); //process all the samples available in the file excluding at least the last 1 ms
+                    samples_ = floor(static_cast<double>(size) / static_cast<double>(item_size()) - ceil(0.002 * static_cast<double>(sampling_frequency_))); //process all the samples available in the file excluding at least the last 1 ms
                 }
         }
 
     CHECK(samples_ > 0) << "File does not contain enough samples to process.";
     double signal_duration_s;
-    signal_duration_s = (double)samples_ * ( 1 /(double)sampling_frequency_);
+    signal_duration_s = static_cast<double>(samples_) * ( 1 / static_cast<double>(sampling_frequency_));
 
-    if ((item_type_.compare("gr_complex") != 0) && (IF < 1e6) )  // if IF < BW/2, signal is complex (interleaved)
+    if ((item_type_.compare("gr_complex") != 0) || (item_type_.compare("ishort") != 0) || (item_type_.compare("ibyte") != 0) )  // signal is complex (interleaved)
         {
             signal_duration_s /= 2;
         }

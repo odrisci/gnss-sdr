@@ -1,13 +1,13 @@
 /*!
- * \file Galileo_Navigation_Message.cc
-  * \brief  Implementation of a Galileo I/NAV Data message
+ * \file galileo_navigation_message.cc
+ * \brief  Implementation of a Galileo I/NAV Data message
  *         as described in Galileo OS SIS ICD Issue 1.1 (Sept. 2010)
  * \author Mara Branzanti 2013. mara.branzanti(at)gmail.com
  * \author Javier Arribas, 2013. jarribas(at)cttc.es
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2013  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -17,7 +17,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -206,6 +206,21 @@ void Galileo_Navigation_Message::reset()
     Time_0 = 0;
     WN_0 = 0;
     TOW_0 = 0;
+
+    flag_TOW_6 = false;
+
+    Galileo_satClkDrift = 0.0;
+    Galileo_dtr = 0.0;
+
+    // satellite positions
+    galileo_satpos_X = 0.0;
+    galileo_satpos_Y = 0.0;
+    galileo_satpos_Z = 0.0;
+    // Satellite velocity
+    galileo_satvel_X = 0.0;
+    galileo_satvel_Y = 0.0;
+    galileo_satvel_Z = 0.0;
+
 }
 
 
@@ -554,6 +569,8 @@ Galileo_Ephemeris Galileo_Navigation_Message::get_ephemeris()
     
     ephemeris.BGD_E1E5a_5 = BGD_E1E5a_5;        // E1-E5a Broadcast Group Delay [s]
     ephemeris.BGD_E1E5b_5 = BGD_E1E5b_5;        // E1-E5b Broadcast Group Delay [s]
+
+    ephemeris.Galileo_satClkDrift = Galileo_satClkDrift;
 
     return ephemeris;
 }

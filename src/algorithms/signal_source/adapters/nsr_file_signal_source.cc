@@ -7,7 +7,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -17,7 +17,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -114,7 +114,7 @@ NsrFileSignalSource::NsrFileSignalSource(ConfigurationInterface* configuration,
         {
             /*!
              * BUG workaround: The GNU Radio file source does not stop the receiver after reaching the End of File.
-             * A possible solution is to compute the file length in samples using file size, excluding the last 100 milliseconds, and enable always the
+             * A possible solution is to compute the file length in samples using file size, excluding the last 2 milliseconds, and enable always the
              * valve block
              */
             std::ifstream file (filename_.c_str(), std::ios::in | std::ios::binary | std::ios::ate);

@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2012  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -16,7 +16,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -55,9 +55,7 @@ GalileoE1Observables::GalileoE1Observables(ConfigurationInterface* configuration
     flag_averaging = configuration->property(role + ".flag_averaging", false);
     dump_ = configuration->property(role + ".dump", false);
     dump_filename_ = configuration->property(role + ".dump_filename", default_dump_filename);
-    fs_in_ = configuration->property("GNSS-SDR.internal_fs_hz", 2048000);
     observables_ = galileo_e1_make_observables_cc(in_streams_, queue_, dump_, dump_filename_, output_rate_ms, flag_averaging);
-    observables_->set_fs_in(fs_in_);
     DLOG(INFO) << "pseudorange(" << observables_->unique_id() << ")";
 }
 
@@ -72,6 +70,7 @@ GalileoE1Observables::~GalileoE1Observables()
 
 void GalileoE1Observables::connect(gr::top_block_sptr top_block)
 {
+    if(top_block) { /* top_block is not null */};
     // Nothing to connect internally
     DLOG(INFO) << "nothing to connect internally";
 }
@@ -80,6 +79,7 @@ void GalileoE1Observables::connect(gr::top_block_sptr top_block)
 
 void GalileoE1Observables::disconnect(gr::top_block_sptr top_block)
 {
+    if(top_block) { /* top_block is not null */};
     // Nothing to disconnect
 }
 

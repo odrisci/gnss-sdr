@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -16,7 +16,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -92,6 +92,17 @@ galileo_pcps_8ms_acquisition_cc::galileo_pcps_8ms_acquisition_cc(
     // For dumping samples into a file
     d_dump = dump;
     d_dump_filename = dump_filename;
+
+    d_doppler_resolution = 0;
+    d_threshold = 0;
+    d_doppler_step = 0;
+    d_grid_doppler_wipeoffs = 0;
+    d_gnss_synchro = 0;
+    d_code_phase = 0;
+    d_doppler_freq = 0;
+    d_test_statistics = 0;
+    d_channel_internal_queue = 0;
+    d_channel = 0;
 }
 
 galileo_pcps_8ms_acquisition_cc::~galileo_pcps_8ms_acquisition_cc()
@@ -165,6 +176,30 @@ void galileo_pcps_8ms_acquisition_cc::init()
             complex_exp_gen_conj(d_grid_doppler_wipeoffs[doppler_index], d_freq + doppler, d_fs_in, d_fft_size);
         }
 }
+
+
+void galileo_pcps_8ms_acquisition_cc::set_state(int state)
+{
+    d_state = state;
+    if (d_state == 1)
+        {
+			d_gnss_synchro->Acq_delay_samples = 0.0;
+			d_gnss_synchro->Acq_doppler_hz = 0.0;
+			d_gnss_synchro->Acq_samplestamp_samples = 0;
+			d_well_count = 0;
+			d_mag = 0.0;
+			d_input_power = 0.0;
+			d_test_statistics = 0.0;
+        }
+    else if (d_state == 0)
+        {}
+    else
+        {
+            LOG(ERROR) << "State can only be set to 0 or 1";
+        }
+}
+
+
 
 int galileo_pcps_8ms_acquisition_cc::general_work(int noutput_items,
         gr_vector_int &ninput_items, gr_vector_const_void_star &input_items,
@@ -378,5 +413,5 @@ int galileo_pcps_8ms_acquisition_cc::general_work(int noutput_items,
         }
     }
 
-    return 0;
+    return noutput_items;
 }

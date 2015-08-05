@@ -7,7 +7,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -17,7 +17,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -50,7 +50,7 @@ TEST(MagnitudeSquared_Test, StandardCComplexImplementation)
 
     for(number = 0; number < (unsigned int)FLAGS_size_magnitude_test; number++)
         {
-            output[number] = (input[number].real()*input[number].real()) + (input[number].imag()*input[number].imag());
+            output[number] = (input[number].real() * input[number].real()) + (input[number].imag() * input[number].imag());
         }
 
     gettimeofday(&tv, NULL);
@@ -58,15 +58,15 @@ TEST(MagnitudeSquared_Test, StandardCComplexImplementation)
     std::cout << "The squared magnitude of a " << FLAGS_size_magnitude_test
               << "-length vector in standard C computed in " << (end - begin)
               << " microseconds" << std::endl;
+    delete[] input;
+    delete[] output;
     ASSERT_LE(0, end - begin);
-    delete [] input;
-    delete [] output;
 }
 
 TEST(MagnitudeSquared_Test, C11ComplexImplementation)
 {
     const std::vector<std::complex<float>> input(FLAGS_size_magnitude_test);
-    std::vector<std::complex<float>> output(FLAGS_size_magnitude_test);
+    std::vector<float> output(FLAGS_size_magnitude_test);
     struct timeval tv;
     int pos = 0;
     gettimeofday(&tv, NULL);
@@ -130,9 +130,9 @@ TEST(MagnitudeSquared_Test, VolkComplexImplementation)
     std::cout <<  "The squared magnitude of a " << FLAGS_size_magnitude_test
               << "-length vector using VOLK computed in " << (end - begin)
               << " microseconds" << std::endl;
-    ASSERT_LE(0, end - begin);
     volk_free(input);
     volk_free(output);
+    ASSERT_LE(0, end - begin);
 }
 
 //            volk_32f_accumulator_s32f(&d_input_power, d_magnitude, d_fft_size);

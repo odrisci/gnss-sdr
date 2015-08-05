@@ -7,7 +7,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -107,14 +107,14 @@ GpsL1CaPcpsQuickSyncAcquisition::GpsL1CaPcpsQuickSyncAcquisition(
     dump_filename_ = configuration_->property(role + ".dump_filename", default_dump_filename);
 
     int samples_per_ms = round(code_length_);
-    code_= new gr_complex[code_length_];
+    code_ = new gr_complex[code_length_]();
     /*Object relevant information for debugging*/
-    LOG(INFO) <<"Implementation: "<<this->implementation()
-                         <<", Vector Length: "<<vector_length_
-                         <<", Samples per ms: "<<samples_per_ms
-                         <<", Folding factor: "<<folding_factor_
-                         <<", Sampled  ms: "<<sampled_ms_
-                         <<", Code Length: "<<code_length_;
+    LOG(INFO) << "Implementation: " << this->implementation()
+                         << ", Vector Length: " << vector_length_
+                         << ", Samples per ms: " << samples_per_ms
+                         << ", Folding factor: " << folding_factor_
+                         << ", Sampled  ms: " << sampled_ms_
+                         << ", Code Length: " << code_length_;
 
     if (item_type_.compare("gr_complex") == 0)
         {
@@ -132,10 +132,16 @@ GpsL1CaPcpsQuickSyncAcquisition::GpsL1CaPcpsQuickSyncAcquisition(
         }
     else
         {
+            item_size_ = sizeof(gr_complex);
             LOG(WARNING) << item_type_ << " unknown acquisition item type";
         }
 
-
+    gnss_synchro_ = 0;
+    threshold_ = 0.0;
+    doppler_max_ = 5000;
+    doppler_step_ = 250;
+    channel_internal_queue_ = 0;
+    channel_ = 0;
 }
 
 
@@ -162,7 +168,7 @@ void GpsL1CaPcpsQuickSyncAcquisition::set_threshold(float threshold)
 
     if(pfa == 0.0)
         {
-            pfa = configuration_->property(role_+".pfa", 0.0);
+            pfa = configuration_->property(role_ + ".pfa", 0.0);
         }
     if(pfa == 0.0)
         {
@@ -249,7 +255,7 @@ void GpsL1CaPcpsQuickSyncAcquisition::set_local_code()
 {
     if (item_type_.compare("gr_complex") == 0)
         {
-            std::complex<float>* code = new std::complex<float>[code_length_];
+            std::complex<float>* code = new std::complex<float>[code_length_]();
 
             gps_l1_ca_code_gen_complex_sampled(code, gnss_synchro_->PRN, fs_in_, 0);
 
@@ -276,6 +282,14 @@ void GpsL1CaPcpsQuickSyncAcquisition::reset()
         }
 }
 
+void GpsL1CaPcpsQuickSyncAcquisition::set_state(int state)
+{
+    if (item_type_.compare("gr_complex") == 0)
+        {
+            acquisition_cc_->set_state(state);
+        }
+}
+
 
 float GpsL1CaPcpsQuickSyncAcquisition::calculate_threshold(float pfa)
 {
@@ -287,11 +301,11 @@ float GpsL1CaPcpsQuickSyncAcquisition::calculate_threshold(float pfa)
         }
     DLOG(INFO) << "Channel " << channel_<< "  Pfa = " << pfa;
     unsigned int ncells = (code_length_ / folding_factor_) * frequency_bins;
-    double exponent = 1 / static_cast<double>(ncells);
+    double exponent = 1.0 / static_cast<double>(ncells);
     double val = pow(1.0 - pfa, exponent);
-    double lambda = double((code_length_ / folding_factor_));
+    double lambda = static_cast<double>(code_length_) / static_cast<double>(folding_factor_);
     boost::math::exponential_distribution<double> mydist (lambda);
-    float threshold = (float)quantile(mydist,val);
+    float threshold = static_cast<float>(quantile(mydist,val));
 
     return threshold;
 }

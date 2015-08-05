@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -16,7 +16,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -64,15 +64,20 @@ TEST(ComplexCarrier_Test, StandardComplexImplementation)
     std::cout << "A " << FLAGS_size_carrier_test
               << "-length complex carrier in standard C++ (dynamic allocation) generated in " << (end - begin)
               << " microseconds" << std::endl;
-    ASSERT_LE(0, end - begin);
+
     std::complex<float> expected(1,0);
     std::vector<std::complex<float>> mag(FLAGS_size_carrier_test);
     for(int i = 0; i < FLAGS_size_carrier_test; i++)
         {
             mag[i] = output[i] * std::conj(output[i]);
+        }
+    delete[] output;
+    for(int i = 0; i < FLAGS_size_carrier_test; i++)
+        {
             ASSERT_FLOAT_EQ(std::norm(expected), std::norm(mag[i]));
         }
-    delete [] output;
+
+    ASSERT_LE(0, end - begin);
 }
 
 
@@ -127,13 +132,17 @@ TEST(ComplexCarrier_Test, OwnComplexImplementation)
     std::cout << "A " << FLAGS_size_carrier_test
               << "-length complex carrier using fixed point generated in " << (end - begin)
               << " microseconds" << std::endl;
-    ASSERT_LE(0, end - begin);
+
     std::complex<float> expected(1,0);
     std::vector<std::complex<float>> mag(FLAGS_size_carrier_test);
     for(int i = 0; i < FLAGS_size_carrier_test; i++)
         {
             mag[i] = output[i] * std::conj(output[i]);
+        }
+    delete[] output;
+    for(int i = 0; i < FLAGS_size_carrier_test; i++)
+        {
             ASSERT_NEAR(std::norm(expected), std::norm(mag[i]), 0.0001);
         }
-    delete [] output;
+    ASSERT_LE(0, end - begin);
 }

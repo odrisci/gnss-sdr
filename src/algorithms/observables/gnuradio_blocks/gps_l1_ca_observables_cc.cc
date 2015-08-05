@@ -4,7 +4,7 @@
  * \author Javier Arribas, 2011. jarribas(at)cttc.es
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2012  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -14,7 +14,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -90,13 +90,13 @@ gps_l1_ca_observables_cc::~gps_l1_ca_observables_cc()
 }
 
 
-bool pairCompare_gnss_synchro_Prn_delay_ms( std::pair<int,Gnss_Synchro> a, std::pair<int,Gnss_Synchro> b)
+bool pairCompare_gnss_synchro_Prn_delay_ms(const std::pair<int,Gnss_Synchro>& a, const std::pair<int,Gnss_Synchro>& b)
 {
     return (a.second.Prn_timestamp_ms) < (b.second.Prn_timestamp_ms);
 }
 
 
-bool pairCompare_gnss_synchro_d_TOW_at_current_symbol( std::pair<int,Gnss_Synchro> a, std::pair<int,Gnss_Synchro> b)
+bool pairCompare_gnss_synchro_d_TOW_at_current_symbol(const std::pair<int,Gnss_Synchro>& a, const std::pair<int,Gnss_Synchro>& b)
 {
     return (a.second.d_TOW_at_current_symbol) < (b.second.d_TOW_at_current_symbol);
 }
@@ -112,7 +112,6 @@ int gps_l1_ca_observables_cc::general_work (int noutput_items, gr_vector_int &ni
     std::map<int,Gnss_Synchro> current_gnss_synchro_map;
     std::map<int,Gnss_Synchro>::iterator gnss_synchro_iter;
 
-    d_sample_counter++; //count for the processed samples
     /*
      * 1. Read the GNSS SYNCHRO objects from available channels
      */

@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2013  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -16,7 +16,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -49,7 +49,7 @@ private:
      * coordinates, P.  LLA is in [degrees degrees meters].  P is in meters.
      * The default ellipsoid planet is WGS84. Original copyright (c) by Kai Borre.
      */
-    arma::vec lla2ecef(arma::vec lla);
+    arma::vec lla2ecef(const arma::vec & lla);
     /*!
      * GEODETIC2ECEF Convert geodetic to geocentric (ECEF) coordinates
      * [X, Y, Z] = GEODETIC2ECEF(PHI, LAMBDA, H, ELLIPSOID) converts geodetic
@@ -80,7 +80,7 @@ private:
      * Paul R. Wolf and Bon A. Dewitt, "Elements of Photogrammetry with
      * Applications in GIS," 3rd Ed., McGraw-Hill, 2000 (Appendix F-3).
      */
-    arma::vec geodetic2ecef(double phi, double lambda, double h, arma::vec ellipsoid);
+    arma::vec geodetic2ecef(double phi, double lambda, double h, const arma::vec & ellipsoid);
     /*!
      * \brief Reads the ephemeris data from an external XML file
      *

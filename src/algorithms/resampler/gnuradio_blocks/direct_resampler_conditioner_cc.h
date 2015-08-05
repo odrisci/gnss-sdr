@@ -13,7 +13,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2012  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -23,7 +23,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -40,6 +40,7 @@
 #define	GNSS_SDR_DIRECT_RESAMPLER_CONDITIONER_CC_H
 
 #include <gnuradio/block.h>
+#include <volk/volk.h>
 
 class direct_resampler_conditioner_cc;
 typedef boost::shared_ptr<direct_resampler_conditioner_cc> direct_resampler_conditioner_cc_sptr;
@@ -60,9 +61,9 @@ private:
             double sample_freq_out);
     double d_sample_freq_in;  //! Specifies the sampling frequency of the input signal
     double d_sample_freq_out; //! Specifies the sampling frequency of the output signal
-    unsigned int d_phase;
-    unsigned int d_lphase;
-    unsigned int d_phase_step;
+    uint32_t d_phase;
+    uint32_t d_lphase;
+    uint32_t d_phase_step;
     unsigned int d_history;
     direct_resampler_conditioner_cc(double sample_freq_in,
             double sample_freq_out);

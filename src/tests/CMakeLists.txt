@@ -1,4 +1,4 @@
-# Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+# Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
 #
 # This file is part of GNSS-SDR.
 #
@@ -24,13 +24,16 @@ if(GTEST_DIR)
     set(GTEST_DIR_LOCAL ${GTEST_DIR})
 endif(GTEST_DIR)
 if(NOT GTEST_DIR_LOCAL)
-    set(GTEST_DIR_LOCAL false CACHE STRING "Gtest downloaded and built automatically")
+    set(GTEST_DIR_LOCAL false)
 else()
-	set(GTEST_DIR_LOCAL true CACHE STRING "Gtest already downloaded")
+	set(GTEST_DIR_LOCAL true)
 endif(NOT GTEST_DIR_LOCAL)
 
+if(GTEST_INCLUDE_DIRS)
+    set(GTEST_DIR_LOCAL true)
+endif(GTEST_INCLUDE_DIRS)
 
-if(NOT GTEST_DIR_LOCAL)
+if(NOT ${GTEST_DIR_LOCAL})
      # if GTEST_DIR is not defined, we download and build it
      set(gtest_RELEASE 1.7.0)
      if(OS_IS_MACOSX)
@@ -80,13 +83,19 @@ if(NOT GTEST_DIR_LOCAL)
           ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}gtest_main.a 
      ) 
 	 set(GTEST_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/../../gtest-${gtest_RELEASE}")
-else(NOT GTEST_DIR_LOCAL)
-     # If the variable GTEST_DIR is defined, we use the existing Googletest
-     set(GTEST_DIR $ENV{GTEST_DIR})
-     set(GTEST_INCLUDE_DIRECTORIES ${GTEST_DIR}/include ${GTEST_DIR} ${GTEST_DIR}/src)
-     add_library(gtest ${GTEST_DIR}/src/gtest-all.cc ${GTEST_DIR}/src/gtest_main.cc)
-     set(GTEST_LIBRARIES gtest)
-endif(NOT GTEST_DIR_LOCAL)
+else(NOT ${GTEST_DIR_LOCAL})
+     if(GTEST_INCLUDE_DIRS)
+          set(GTEST_INCLUDE_DIRECTORIES ${GTEST_INCLUDE_DIRS} ${LIBGTEST_DEV_DIR})
+          add_library(gtest ${LIBGTEST_DEV_DIR}/src/gtest-all.cc ${LIBGTEST_DEV_DIR}/src/gtest_main.cc)
+          set(GTEST_LIBRARIES gtest)
+     else(GTEST_INCLUDE_DIRS)
+          # If the variable GTEST_DIR is defined, we use the existing Googletest
+          set(GTEST_DIR $ENV{GTEST_DIR})
+          set(GTEST_INCLUDE_DIRECTORIES ${GTEST_DIR}/include ${GTEST_DIR} ${GTEST_DIR}/src)
+          add_library(gtest ${GTEST_DIR}/src/gtest-all.cc ${GTEST_DIR}/src/gtest_main.cc)
+          set(GTEST_LIBRARIES gtest)
+     endif(GTEST_INCLUDE_DIRS)
+endif(NOT ${GTEST_DIR_LOCAL})
 
 
 set(GNSS_SDR_TEST_OPTIONAL_LIBS "")
@@ -99,6 +108,9 @@ if(ENABLE_GPERFTOOLS)
     endif(GPERFTOOLS_FOUND)
 endif(ENABLE_GPERFTOOLS)
 
+if(Boost_VERSION LESS 105000)
+     add_definitions(-DOLD_BOOST=1)
+endif(Boost_VERSION LESS 105000)
      
 include_directories(
      ${GTEST_INCLUDE_DIRECTORIES}
@@ -110,6 +122,8 @@ include_directories(
      ${CMAKE_SOURCE_DIR}/src/core/libs/supl/asn-rrlp
      ${CMAKE_SOURCE_DIR}/src/core/libs/supl/asn-supl
      ${CMAKE_SOURCE_DIR}/src/algorithms/libs
+     ${CMAKE_SOURCE_DIR}/src/algorithms/data_type_adapter/adapters
+     ${CMAKE_SOURCE_DIR}/src/algorithms/data_type_adapter/gnuradio_blocks
      ${CMAKE_SOURCE_DIR}/src/algorithms/resampler/gnuradio_blocks
      ${CMAKE_SOURCE_DIR}/src/algorithms/channel/adapters
      ${CMAKE_SOURCE_DIR}/src/algorithms/channel/libs
@@ -123,6 +137,7 @@ include_directories(
      ${CMAKE_SOURCE_DIR}/src/algorithms/signal_generator/adapters
      ${CMAKE_SOURCE_DIR}/src/algorithms/signal_generator/gnuradio_blocks
      ${CMAKE_SOURCE_DIR}/src/algorithms/input_filter/adapters
+     ${CMAKE_SOURCE_DIR}/src/algorithms/input_filter/gnuradio_blocks
      ${CMAKE_SOURCE_DIR}/src/algorithms/acquisition/adapters
      ${CMAKE_SOURCE_DIR}/src/algorithms/acquisition/gnuradio_blocks
      ${CMAKE_SOURCE_DIR}/src/algorithms/output_filter/adapters
@@ -134,6 +149,7 @@ include_directories(
      ${ARMADILLO_INCLUDE_DIRS}
      ${VOLK_INCLUDE_DIRS}
      ${VOLK_GNSSSDR_INCLUDE_DIRS}
+     ${GNSS_SDR_TEST_OPTIONAL_HEADERS}
      ${GNSS_SDR_TEST_OPTIONAL_HEADERS}
 )
 
@@ -168,7 +184,8 @@ target_link_libraries(run_tests ${CLANG_FLAGS}
                                 ${ARMADILLO_LIBRARIES}
                                 ${VOLK_LIBRARIES}
                                 gnss_sp_libs 
-                                gnss_rx  
+                                gnss_rx
+                                gnss_system_parameters  
                                 signal_generator_blocks
                                 signal_generator_adapters
                                 out_adapters
@@ -181,57 +198,150 @@ target_link_libraries(run_tests ${CLANG_FLAGS}
 #########################################################
 #  Adding Tests to Ctest
 #########################################################
-# ToDo
 
-#set(CMAKE_CTEST_COMMAND ctest -V)
-#add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-     
-add_executable(control_thread_test EXCLUDE_FROM_ALL
+set(CMAKE_CTEST_COMMAND ctest -V)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+
+add_executable(control_thread_test
      ${CMAKE_CURRENT_SOURCE_DIR}/single_test_main.cc 
      ${CMAKE_CURRENT_SOURCE_DIR}/control_thread/control_message_factory_test.cc
+     ${CMAKE_CURRENT_SOURCE_DIR}/control_thread/control_thread_test.cc
 )
+if(NOT ${ENABLE_PACKAGING})
+     set_property(TARGET control_thread_test PROPERTY EXCLUDE_FROM_ALL TRUE)
+endif(NOT ${ENABLE_PACKAGING})
 
 target_link_libraries(control_thread_test ${Boost_LIBRARIES} 
                                           ${GFLAGS_LIBS} 
                                           ${GLOG_LIBRARIES} 
                                           ${GTEST_LIBRARIES} 
-                                          gnss_sp_libs 
+                                          gnss_sp_libs
+                                          gnss_system_parameters
                                           gnss_rx
+                                          ${VOLK_GNSSSDR_LIBRARIES} ${ORC_LIBRARIES}
                                           )
                                           
 add_test(control_thread_test control_thread_test)
+if(NOT ${GTEST_DIR_LOCAL})
+    add_dependencies(control_thread_test gtest-${gtest_RELEASE})
+else(NOT ${GTEST_DIR_LOCAL})
+    add_dependencies(control_thread_test gtest)
+endif(NOT ${GTEST_DIR_LOCAL}) 
+set_property(TEST control_thread_test PROPERTY TIMEOUT 30)
 
-add_executable(gnss_block_test EXCLUDE_FROM_ALL
+add_executable(flowgraph_test 
+     ${CMAKE_CURRENT_SOURCE_DIR}/single_test_main.cc 
+     ${CMAKE_CURRENT_SOURCE_DIR}/flowgraph/gnss_flowgraph_test.cc
+)
+if(NOT ${ENABLE_PACKAGING})
+     set_property(TARGET flowgraph_test PROPERTY EXCLUDE_FROM_ALL TRUE)
+endif(NOT ${ENABLE_PACKAGING})
+
+target_link_libraries(flowgraph_test ${Boost_LIBRARIES} 
+                                     ${GFLAGS_LIBS} 
+                                     ${GLOG_LIBRARIES} 
+                                     ${GTEST_LIBRARIES} 
+                                     gnss_sp_libs 
+                                     gnss_rx
+                                     gnss_system_parameters
+                                     ${VOLK_GNSSSDR_LIBRARIES} ${ORC_LIBRARIES}
+                                     )
+
+add_test(flowgraph_test flowgraph_test)
+if(NOT ${GTEST_DIR_LOCAL})
+    add_dependencies(flowgraph_test gtest-${gtest_RELEASE})
+else(NOT ${GTEST_DIR_LOCAL})
+    add_dependencies(flowgraph_test gtest)
+endif(NOT ${GTEST_DIR_LOCAL}) 
+set_property(TEST flowgraph_test PROPERTY TIMEOUT 30)
+
+add_executable(gnss_block_test
      ${CMAKE_CURRENT_SOURCE_DIR}/single_test_main.cc 
      ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/file_signal_source_test.cc
      ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/fir_filter_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/gps_l1_ca_pcps_acquisition_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/gps_l1_ca_pcps_acquisition_gsoc2013_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/gps_l1_ca_pcps_multithread_acquisition_gsoc2013_test.cc
-#     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/gps_l1_ca_pcps_opencl_acquisition_gsoc2013_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/gps_l1_ca_pcps_tong_acquisition_gsoc2013_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/gps_l1_ca_pcps_quicksync_acquisition_gsoc2014_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/galileo_e1_pcps_ambiguous_acquisition_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/galileo_e1_pcps_ambiguous_acquisition_gsoc_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/galileo_e1_pcps_ambiguous_acquisition_gsoc2013_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/galileo_e1_pcps_8ms_ambiguous_acquisition_gsoc2013_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/galileo_e1_pcps_cccwsr_ambiguous_acquisition_gsoc2013_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/galileo_e1_pcps_quicksync_ambiguous_acquisition_gsoc2014_test.cc
-     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/galileo_e1_pcps_tong_ambiguous_acquisition_gsoc2013_test.cc
-     #${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/galileo_e1_dll_pll_veml_tracking_test.cc
+     ${CMAKE_CURRENT_SOURCE_DIR}/flowgraph/pass_through_test.cc
      ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/file_output_filter_test.cc
      ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/gnss_block_factory_test.cc   
 )
+if(NOT ${ENABLE_PACKAGING})
+     set_property(TARGET gnss_block_test PROPERTY EXCLUDE_FROM_ALL TRUE)
+endif(NOT ${ENABLE_PACKAGING})
+
 target_link_libraries(gnss_block_test ${Boost_LIBRARIES}
                                       ${GFLAGS_LIBS} 
                                       ${GLOG_LIBRARIES} 
-                                      ${GTEST_LIBRARIES} 
+                                      ${GTEST_LIBRARIES}
+                                      ${GNURADIO_RUNTIME_LIBRARIES} 
+                                      ${GNURADIO_BLOCKS_LIBRARIES} 
+                                      ${GNURADIO_FILTER_LIBRARIES} 
+                                      ${GNURADIO_ANALOG_LIBRARIES} 
                                       gnss_sp_libs 
-                                      gnss_rx 
-                                      signal_generator_blocks
+                                      gnss_rx
+                                      gnss_system_parameters
+                                      # signal_generator_blocks
                                       out_adapters
+                                      ${VOLK_GNSSSDR_LIBRARIES} ${ORC_LIBRARIES}
                                       )
                                       
 add_test(gnss_block_test gnss_block_test)
+if(NOT ${GTEST_DIR_LOCAL})
+    add_dependencies(gnss_block_test gtest-${gtest_RELEASE})
+else(NOT ${GTEST_DIR_LOCAL})
+    add_dependencies(gnss_block_test gtest)
+endif(NOT ${GTEST_DIR_LOCAL}) 
 
- 
+# add_executable(acq_test ${EXCLUDE}
+#      ${CMAKE_CURRENT_SOURCE_DIR}/single_test_main.cc 
+#      ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/gps_l1_ca_pcps_acquisition_test.cc
+#      ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/galileo_e1_pcps_ambiguous_acquisition_test.cc
+# )
+# target_link_libraries(acq_test ${Boost_LIBRARIES}
+#                                ${GFLAGS_LIBS} 
+#                                ${GLOG_LIBRARIES} 
+#                                ${GTEST_LIBRARIES}
+#                                ${GNURADIO_RUNTIME_LIBRARIES} 
+#                                ${GNURADIO_BLOCKS_LIBRARIES} 
+#                                ${GNURADIO_FILTER_LIBRARIES} 
+#                                ${GNURADIO_ANALOG_LIBRARIES} 
+#                                gnss_sp_libs 
+#                                gnss_rx
+#                                gnss_system_parameters
+#                                signal_generator_blocks
+#                                out_adapters
+#                                ${VOLK_GNSSSDR_LIBRARIES} ${ORC_LIBRARIES}
+#                                )                                     
+# add_test(acq_test acq_test)
+
+add_executable(trk_test
+     ${CMAKE_CURRENT_SOURCE_DIR}/single_test_main.cc 
+     ${CMAKE_CURRENT_SOURCE_DIR}/gnss_block/galileo_e1_dll_pll_veml_tracking_test.cc
+)
+if(NOT ${ENABLE_PACKAGING})
+     set_property(TARGET trk_test PROPERTY EXCLUDE_FROM_ALL TRUE)
+endif(NOT ${ENABLE_PACKAGING})
+
+target_link_libraries(trk_test ${Boost_LIBRARIES}
+                               ${GFLAGS_LIBS} 
+                               ${GLOG_LIBRARIES} 
+                               ${GTEST_LIBRARIES}
+                               ${GNURADIO_RUNTIME_LIBRARIES} 
+                               ${GNURADIO_BLOCKS_LIBRARIES} 
+                               ${GNURADIO_FILTER_LIBRARIES} 
+                               ${GNURADIO_ANALOG_LIBRARIES} 
+                               gnss_sp_libs 
+                               gnss_rx
+                               gnss_system_parameters
+                               signal_generator_blocks
+                               out_adapters
+                               ${VOLK_GNSSSDR_LIBRARIES} ${ORC_LIBRARIES}
+                               )
+                                      
+add_test(trk_test trk_test)
+if(NOT ${GTEST_DIR_LOCAL})
+    add_dependencies(trk_test gtest-${gtest_RELEASE})
+else(NOT ${GTEST_DIR_LOCAL})
+    add_dependencies(trk_test gtest)
+endif(NOT ${GTEST_DIR_LOCAL}) 
+
+add_dependencies(check control_thread_test flowgraph_test gnss_block_test trk_test)
+

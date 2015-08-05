@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2014  (see AUTHORS file for a list of contributors)
+# Copyright (C) 2012-2015  (see AUTHORS file for a list of contributors)
 #
 # This file is part of GNSS-SDR.
 #
@@ -17,10 +17,11 @@
 #
 
 set(TELEMETRY_DECODER_ADAPTER_SOURCES 
-	gps_l1_ca_telemetry_decoder.cc 
-	galileo_e1b_telemetry_decoder.cc
-	sbas_l1_telemetry_decoder.cc
-	galileo_e5a_telemetry_decoder.cc
+    gps_l1_ca_telemetry_decoder.cc 
+    gps_l2_m_telemetry_decoder.cc 
+    galileo_e1b_telemetry_decoder.cc
+    sbas_l1_telemetry_decoder.cc
+    galileo_e5a_telemetry_decoder.cc
 )
 
 include_directories(
@@ -39,4 +40,4 @@ include_directories(
 file(GLOB TELEMETRY_DECODER_ADAPTER_HEADERS "*.h")
 add_library(telemetry_decoder_adapters ${TELEMETRY_DECODER_ADAPTER_SOURCES} ${TELEMETRY_DECODER_ADAPTER_HEADERS})
 source_group(Headers FILES ${TELEMETRY_DECODER_ADAPTER_HEADERS})
-target_link_libraries(telemetry_decoder_adapters telemetry_decoder_gr_blocks ${GNURADIO_RUNTIME_LIBRARIES})
+target_link_libraries(telemetry_decoder_adapters telemetry_decoder_gr_blocks gnss_system_parameters ${GNURADIO_RUNTIME_LIBRARIES})

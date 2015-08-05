@@ -11,7 +11,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -21,7 +21,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -64,7 +64,7 @@ GalileoE1DllPllVemlTracking::GalileoE1DllPllVemlTracking(
     float early_late_space_chips;
     float very_early_late_space_chips;
 
-    item_type = configuration->property(role + ".item_type",default_item_type);
+    item_type = configuration->property(role + ".item_type", default_item_type);
     fs_in = configuration->property("GNSS-SDR.internal_fs_hz", 2048000);
     f_if = configuration->property(role + ".if", 0);
     dump = configuration->property(role + ".dump", false);
@@ -96,8 +96,12 @@ GalileoE1DllPllVemlTracking::GalileoE1DllPllVemlTracking(
         }
     else
         {
+            item_size_ = sizeof(gr_complex);
             LOG(WARNING) << item_type << " unknown tracking item type.";
         }
+
+    channel_ = 0;
+    channel_internal_queue_ = 0;
 
     DLOG(INFO) << "tracking(" << tracking_->unique_id() << ")";
 }
@@ -138,12 +142,14 @@ void GalileoE1DllPllVemlTracking::set_gnss_synchro(Gnss_Synchro* p_gnss_synchro)
 
 void GalileoE1DllPllVemlTracking::connect(gr::top_block_sptr top_block)
 {
-    //nothing to connect, now the tracking uses gr_sync_decimator
+	if(top_block) { /* top_block is not null */};
+	//nothing to connect, now the tracking uses gr_sync_decimator
 }
 
 void GalileoE1DllPllVemlTracking::disconnect(gr::top_block_sptr top_block)
 {
-    //nothing to disconnect, now the tracking uses gr_sync_decimator
+	if(top_block) { /* top_block is not null */};
+	//nothing to disconnect, now the tracking uses gr_sync_decimator
 }
 
 gr::basic_block_sptr GalileoE1DllPllVemlTracking::get_left_block()

@@ -13,7 +13,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2012  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -23,7 +23,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -93,8 +93,12 @@ GpsL1CaDllPllOptimTracking::GpsL1CaDllPllOptimTracking(
         }
     else
         {
+            item_size_ = sizeof(gr_complex);
             LOG(WARNING) << item_type << " unknown tracking item type.";
         }
+
+    channel_ = 0;
+    channel_internal_queue_ = 0;
     DLOG(INFO) << "tracking(" << tracking_->unique_id() << ")";
 }
 
@@ -134,12 +138,14 @@ void GpsL1CaDllPllOptimTracking::set_gnss_synchro(Gnss_Synchro* p_gnss_synchro)
 
 void GpsL1CaDllPllOptimTracking::connect(gr::top_block_sptr top_block)
 {
-    //nothing to connect, now the tracking uses gr_sync_decimator
+	if(top_block) { /* top_block is not null */};
+	//nothing to connect, now the tracking uses gr_sync_decimator
 }
 
 void GpsL1CaDllPllOptimTracking::disconnect(gr::top_block_sptr top_block)
 {
-    //nothing to disconnect, now the tracking uses gr_sync_decimator
+	if(top_block) { /* top_block is not null */};
+	//nothing to disconnect, now the tracking uses gr_sync_decimator
 }
 
 gr::basic_block_sptr GpsL1CaDllPllOptimTracking::get_left_block()

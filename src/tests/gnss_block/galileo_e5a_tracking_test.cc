@@ -7,7 +7,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2012-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2012-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -53,13 +53,12 @@ class GalileoE5aTrackingTest: public ::testing::Test
 protected:
     GalileoE5aTrackingTest()
     {
-        queue = gr::msg_queue::make(0);
-        top_block = gr::make_top_block("Tracking test");
         factory = std::make_shared<GNSSBlockFactory>();
         config = std::make_shared<InMemoryConfiguration>();
         item_size = sizeof(gr_complex);
         stop = false;
         message = 0;
+        gnss_synchro = Gnss_Synchro();
     }
 
     ~GalileoE5aTrackingTest()
@@ -107,8 +106,10 @@ TEST_F(GalileoE5aTrackingTest, ValidationOfResults)
     long long int begin = 0;
     long long int end = 0;
     int fs_in = 32000000;
-    int nsamples = 32000000*1.5;
+    int nsamples = 32000000*5;
     init();
+    queue = gr::msg_queue::make(0);
+    top_block = gr::make_top_block("Tracking test");
 
     // Example using smart pointers and the block factory
     std::shared_ptr<GNSSBlockInterface> trk_ = factory->GetBlock(config, "Tracking", "Galileo_E5a_DLL_PLL_Tracking", 1, 1, queue);

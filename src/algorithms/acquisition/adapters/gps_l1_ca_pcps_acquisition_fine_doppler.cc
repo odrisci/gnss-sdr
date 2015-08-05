@@ -9,7 +9,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -19,7 +19,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -75,23 +75,29 @@ GpsL1CaPcpsAcquisitionFineDoppler::GpsL1CaPcpsAcquisitionFineDoppler(
     code_= new gr_complex[vector_length_];
 
     if (item_type_.compare("gr_complex") == 0)
-    {
-        item_size_ = sizeof(gr_complex);
-        acquisition_cc_ = pcps_make_acquisition_fine_doppler_cc(max_dwells_,sampled_ms_,
-        		doppler_max_, doppler_min_, if_, fs_in_, vector_length_, queue_,
-                dump_, dump_filename_);
+        {
+            item_size_ = sizeof(gr_complex);
+            acquisition_cc_ = pcps_make_acquisition_fine_doppler_cc(max_dwells_,sampled_ms_,
+                    doppler_max_, doppler_min_, if_, fs_in_, vector_length_, queue_,
+                    dump_, dump_filename_);
 
-    }
+        }
     else
-    {
-        LOG(WARNING) << item_type_ << " unknown acquisition item type";
-    }
+        {
+            item_size_ = sizeof(gr_complex);
+            LOG(WARNING) << item_type_ << " unknown acquisition item type";
+        }
+    channel_ = 0;
+    threshold_ = 0.0;
+    doppler_step_ = 0;
+    gnss_synchro_ = 0;
+    channel_internal_queue_ = 0;
 }
 
 
 GpsL1CaPcpsAcquisitionFineDoppler::~GpsL1CaPcpsAcquisitionFineDoppler()
 {
-	delete[] code_;
+    delete[] code_;
 }
 
 
@@ -166,7 +172,7 @@ void GpsL1CaPcpsAcquisitionFineDoppler::reset()
 
 void GpsL1CaPcpsAcquisitionFineDoppler::connect(boost::shared_ptr<gr::top_block> top_block)
 {
-
+	if(top_block) { /* top_block is not null */};
     //nothing to disconnect, now the tracking uses gr_sync_decimator
 
 }
@@ -174,7 +180,8 @@ void GpsL1CaPcpsAcquisitionFineDoppler::connect(boost::shared_ptr<gr::top_block>
 
 void GpsL1CaPcpsAcquisitionFineDoppler::disconnect(boost::shared_ptr<gr::top_block> top_block)
 {
-    //nothing to disconnect, now the tracking uses gr_sync_decimator
+	if(top_block) { /* top_block is not null */};
+	//nothing to disconnect, now the tracking uses gr_sync_decimator
 }
 
 

@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -31,6 +31,7 @@
 
 #include <ctime>
 #include <iostream>
+#include <boost/chrono.hpp>
 #include <gnuradio/top_block.h>
 #include <gnuradio/blocks/file_source.h>
 #include <gnuradio/analog/sig_source_waveform.h>
@@ -48,7 +49,6 @@
 #include "fir_filter.h"
 #include "gen_signal_source.h"
 #include "gnss_sdr_valve.h"
-#include "boost/shared_ptr.hpp"
 #include "pass_through.h"
 #include "file_output_filter.h"
 
@@ -58,17 +58,16 @@ class GalileoE5aPcpsAcquisitionGSoC2014GensourceTest: public ::testing::Test
 {
 protected:
     GalileoE5aPcpsAcquisitionGSoC2014GensourceTest()
-{
-        queue = gr::msg_queue::make(0);
-        top_block = gr::make_top_block("Acquisition test");
+    {
         item_size = sizeof(gr_complex);
         stop = false;
         message = 0;
-}
+        gnss_synchro = Gnss_Synchro();
+        init();
+    }
 
     ~GalileoE5aPcpsAcquisitionGSoC2014GensourceTest()
-    {
-    }
+    {}
 
     void init();
     void config_1();
@@ -92,27 +91,27 @@ protected:
     int message;
     boost::thread ch_thread;
 
-    unsigned int integration_time_ms;
-    unsigned int fs_in;
+    unsigned int integration_time_ms = 0;
+    unsigned int fs_in = 0;
 
-    double expected_delay_chips;
-    double expected_delay_sec;
-    double expected_doppler_hz;
-    double expected_delay_chips1;
-    double expected_delay_sec1;
-    double expected_doppler_hz1;
-    double expected_delay_chips2;
-    double expected_delay_sec2;
-    double expected_doppler_hz2;
-    double expected_delay_chips3;
-    double expected_delay_sec3;
-    double expected_doppler_hz3;
-    float max_doppler_error_hz;
-    float max_delay_error_chips;
-    int CAF_window_hz;
-    int Zero_padding;
+    double expected_delay_chips = 0.0;
+    double expected_delay_sec = 0.0;
+    double expected_doppler_hz = 0.0;
+    double expected_delay_chips1 = 0.0;
+    double expected_delay_sec1 = 0.0;
+    double expected_doppler_hz1 = 0.0;
+    double expected_delay_chips2 = 0.0;
+    double expected_delay_sec2 = 0.0;
+    double expected_doppler_hz2 = 0.0;
+    double expected_delay_chips3 = 0.0;
+    double expected_delay_sec3 = 0.0;
+    double expected_doppler_hz3 = 0.0;
+    float max_doppler_error_hz = 0.0;
+    float max_delay_error_chips = 0.0;
+    int CAF_window_hz = 0;
+    int Zero_padding = 0;
 
-    unsigned int num_of_realizations;
+    unsigned int num_of_realizations = 0;
     unsigned int realization_counter;
     unsigned int detection_counter;
     unsigned int correct_estimation_counter;
@@ -126,7 +125,7 @@ protected:
     double Pfa_p;
     double Pfa_a;
 
-    int sat;
+    int sat = 0;
 };
 
 void GalileoE5aPcpsAcquisitionGSoC2014GensourceTest::init()
@@ -448,20 +447,20 @@ void GalileoE5aPcpsAcquisitionGSoC2014GensourceTest::process_message()
             switch (sat)
             {
             case 0:
-                delay_error_chips = abs((double)expected_delay_chips - (double)(gnss_synchro.Acq_delay_samples-5)*10230.0/((double)fs_in*1e-3));
-                doppler_error_hz = abs(expected_doppler_hz - gnss_synchro.Acq_doppler_hz);
+                delay_error_chips = std::abs((double)expected_delay_chips - (double)(gnss_synchro.Acq_delay_samples-5)*10230.0/((double)fs_in*1e-3));
+                doppler_error_hz = std::abs(expected_doppler_hz - gnss_synchro.Acq_doppler_hz);
                 break;
             case 1:
-                delay_error_chips = abs((double)expected_delay_chips1 - (double)(gnss_synchro.Acq_delay_samples-5)*10230.0/((double)fs_in*1e-3));
-                doppler_error_hz = abs(expected_doppler_hz1 - gnss_synchro.Acq_doppler_hz);
+                delay_error_chips = std::abs((double)expected_delay_chips1 - (double)(gnss_synchro.Acq_delay_samples-5)*10230.0/((double)fs_in*1e-3));
+                doppler_error_hz = std::abs(expected_doppler_hz1 - gnss_synchro.Acq_doppler_hz);
                 break;
             case 2:
-                delay_error_chips = abs((double)expected_delay_chips2 - (double)(gnss_synchro.Acq_delay_samples-5)*10230.0/((double)fs_in*1e-3));
-                doppler_error_hz = abs(expected_doppler_hz2 - gnss_synchro.Acq_doppler_hz);
+                delay_error_chips = std::abs((double)expected_delay_chips2 - (double)(gnss_synchro.Acq_delay_samples-5)*10230.0/((double)fs_in*1e-3));
+                doppler_error_hz = std::abs(expected_doppler_hz2 - gnss_synchro.Acq_doppler_hz);
                 break;
             case 3:
-                delay_error_chips = abs((double)expected_delay_chips3 - (double)(gnss_synchro.Acq_delay_samples-5)*10230.0/((double)fs_in*1e-3));
-                doppler_error_hz = abs(expected_doppler_hz3 - gnss_synchro.Acq_doppler_hz);
+                delay_error_chips = std::abs((double)expected_delay_chips3 - (double)(gnss_synchro.Acq_delay_samples-5)*10230.0/((double)fs_in*1e-3));
+                doppler_error_hz = std::abs(expected_doppler_hz3 - gnss_synchro.Acq_doppler_hz);
                 break;
             default: // case 3
                 std::cout << "Error: message from unexpected acquisition channel" << std::endl;
@@ -597,7 +596,8 @@ TEST_F(GalileoE5aPcpsAcquisitionGSoC2014GensourceTest, SOURCEValidationTOFILE)
 TEST_F(GalileoE5aPcpsAcquisitionGSoC2014GensourceTest, ValidationOfSIM)
 {
     config_1();
-
+    queue = gr::msg_queue::make(0);
+    top_block = gr::make_top_block("Acquisition test");
     //int nsamples = floor(fs_in*integration_time_ms*1e-3);
     acquisition = std::make_shared<GalileoE5aNoncoherentIQAcquisitionCaf>(config.get(), "Acquisition", 1, 1, queue);
 
@@ -606,7 +606,7 @@ TEST_F(GalileoE5aPcpsAcquisitionGSoC2014GensourceTest, ValidationOfSIM)
     //    unsigned int skiphead_sps = 84000;
 
     ASSERT_NO_THROW( {
-        acquisition->set_channel(1);
+        acquisition->set_channel(0);
     }) << "Failure setting channel."<< std::endl;
 
     ASSERT_NO_THROW( {
@@ -641,11 +641,14 @@ TEST_F(GalileoE5aPcpsAcquisitionGSoC2014GensourceTest, ValidationOfSIM)
         SignalGenerator* signal_generator = new SignalGenerator(config.get(), "SignalSource", 0, 1, queue);
 
         FirFilter* filter = new FirFilter(config.get(), "InputFilter", 1, 1, queue);
+        filter->connect(top_block);
         signal_source.reset(new GenSignalSource(config.get(), signal_generator, filter, "SignalSource", queue));
         signal_source->connect(top_block);
         top_block->connect(signal_source->get_right_block(), 0, acquisition->get_left_block(), 0);
      }) << "Failure connecting the blocks of acquisition test." << std::endl;
 
+    acquisition->reset();
+    acquisition->init();
     // USING SIGNAL FROM FILE SOURCE
     /*
     ASSERT_NO_THROW( {
@@ -676,7 +679,7 @@ TEST_F(GalileoE5aPcpsAcquisitionGSoC2014GensourceTest, ValidationOfSIM)
                 {
                     gnss_synchro.PRN = 19; //real
                     //gnss_synchro.PRN = 11; //sim
-                    break;
+                    //break;
                 }
                 //        	case 1:
                 //        	    {
@@ -702,14 +705,21 @@ TEST_F(GalileoE5aPcpsAcquisitionGSoC2014GensourceTest, ValidationOfSIM)
             //                {
             //                    gnss_synchro.PRN = 19; // This satellite is not visible
             //                }
-            acquisition->set_local_code();
-
             start_queue();
+
+            acquisition->reset();
+            acquisition->init();
+            acquisition->set_gnss_synchro(&gnss_synchro);
+            acquisition->set_local_code();
+            acquisition->set_state(1);
 
             EXPECT_NO_THROW( {
                 top_block->run(); // Start threads and wait
             }) << "Failure running the top_block."<< std::endl;
 
+            stop_queue();
+
+            ch_thread.join();
             //std::cout << gnss_synchro.Acq_delay_samples << "acq delay" <<std::endl;
             //std::cout << gnss_synchro.Acq_doppler_hz << "acq doppler" <<std::endl;
             //std::cout << gnss_synchro.Acq_samplestamp_samples << "acq samples" <<std::endl;

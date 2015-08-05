@@ -6,7 +6,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -16,7 +16,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,8 +42,10 @@
 #include <boost/lexical_cast.hpp>
 #include "gps_navigation_message.h"
 #include "gps_ephemeris.h"
+#include "gps_cnav_ephemeris.h"
 #include "gps_almanac.h"
 #include "gps_iono.h"
+#include "gps_cnav_iono.h"
 #include "gps_utc_model.h"
 #include "gnss_sdr_supl_client.h"
 
@@ -282,20 +284,20 @@ bool FrontEndCal::get_ephemeris()
 }
 
 
-arma::vec FrontEndCal::lla2ecef(arma::vec lla)
+arma::vec FrontEndCal::lla2ecef(const arma::vec & lla)
 {
     // WGS84 flattening
-    double f = 1/298.257223563;
+    double f = 1.0 / 298.257223563;
 
     // WGS84 equatorial radius
-    double R = 6378137;
+    double R = 6378137.0;
 
     arma::vec ellipsoid = "0.0 0.0";
-    double phi = (lla(0)/360.0) * GPS_TWO_PI;
-    double lambda = (lla(1)/360.0) * GPS_TWO_PI;
+    double phi = (lla(0) / 360.0) * GPS_TWO_PI;
+    double lambda = (lla(1) / 360.0) * GPS_TWO_PI;
 
     ellipsoid(0) = R;
-    ellipsoid(1) = sqrt(1-(1-f)*(1-f));
+    ellipsoid(1) = sqrt(1.0 - (1.0 - f)*(1.0 - f));
 
     arma::vec ecef = "0.0 0.0 0.0 0.0";
     ecef = geodetic2ecef(phi, lambda, lla(3), ellipsoid);
@@ -304,18 +306,18 @@ arma::vec FrontEndCal::lla2ecef(arma::vec lla)
 }
 
 
-arma::vec FrontEndCal::geodetic2ecef(double phi, double lambda, double h, arma::vec ellipsoid)
+arma::vec FrontEndCal::geodetic2ecef(double phi, double lambda, double h, const arma::vec & ellipsoid)
 {
     double a = ellipsoid(0);
     double e2 = ellipsoid(1)*ellipsoid(1);
     double sinphi = sin(phi);
     double cosphi = cos(phi);
-    double N = a / sqrt(1 - e2 * sinphi*sinphi);
+    double N = a / sqrt(1.0 - e2 * sinphi*sinphi);
     arma::vec ecef = "0.0 0.0 0.0 0.0";
 
     ecef(0) = (N + h) * cosphi * cos(lambda);
     ecef(1) = (N + h) * cosphi * sin(lambda);
-    ecef(2) = (N*(1 - e2) + h) * sinphi;
+    ecef(2) = (N*(1.0 - e2) + h) * sinphi;
 
     return ecef;
 }
@@ -376,7 +378,6 @@ double FrontEndCal::estimate_doppler_from_eph(unsigned int PRN, double TOW, doub
             double mean_Doppler_Hz;
             mean_Doppler_Hz = arma::mean(Doppler_Hz);
             return mean_Doppler_Hz;
-            return 0;
         }
     else
         {
@@ -389,13 +390,13 @@ void FrontEndCal::GPS_L1_front_end_model_E4000(double f_bb_true_Hz, double f_bb_
 {
     const double f_osc_n = 28.8e6;
     //PLL registers settings (according to E4000 datasheet)
-    const double N = 109;
-    const double Y = 65536;
-    const double X = 26487;
-    const double R = 2;
+    const double N = 109.0;
+    const double Y = 65536.0;
+    const double X = 26487.0;
+    const double R = 2.0;
 
     // Obtained RF center frequency
-    double f_rf_pll = (f_osc_n*(N+X/Y))/R;
+    double f_rf_pll = (f_osc_n * (N + X / Y)) /R;
 
     // RF frequency error caused by fractional PLL roundings
     double f_bb_err_pll = GPS_L1_FREQ_HZ - f_rf_pll;

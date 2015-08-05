@@ -5,7 +5,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -15,7 +15,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -93,11 +93,11 @@ hybrid_pvt_cc::hybrid_pvt_cc(unsigned int nchannels, boost::shared_ptr<gr::msg_q
     d_ls_pvt->set_averaging_depth(d_averaging_depth);
 
     d_sample_counter = 0;
-    valid_solution_counter = 0;
     d_last_sample_nav_output = 0;
     d_rx_time = 0.0;
     d_TOW_at_curr_symbol_constellation = 0.0;
     b_rinex_header_writen = false;
+    b_rinex_header_updated = false;
     rp = std::make_shared<Rinex_Printer>();
 
     // ############# ENABLE DATA FILE LOG #################
@@ -126,7 +126,7 @@ hybrid_pvt_cc::~hybrid_pvt_cc()
 
 
 
-bool hybrid_pvt_cc::pseudoranges_pairCompare_min( std::pair<int,Gnss_Synchro> a, std::pair<int,Gnss_Synchro> b)
+bool hybrid_pvt_cc::pseudoranges_pairCompare_min(const std::pair<int,Gnss_Synchro>& a, const std::pair<int,Gnss_Synchro>& b)
 {
     return (a.second.Pseudorange_m) < (b.second.Pseudorange_m);
 }
@@ -163,20 +163,59 @@ int hybrid_pvt_cc::general_work (int noutput_items, gr_vector_int &ninput_items,
 
     if (global_galileo_utc_model_map.size() > 0)
         {
-            // UTC MODEL data is shared for all the Galileo satellites. Read always at ID=0
-            global_galileo_utc_model_map.read(0, d_ls_pvt->galileo_utc_model);
+            // UTC MODEL data is shared for all the Galileo satellites. Read always at a locked channel
+            signed int i = 0;
+            while(true)
+                {
+                    if (in[i][0].Flag_valid_pseudorange == true)
+                        {
+                            global_galileo_utc_model_map.read(i, d_ls_pvt->galileo_utc_model);
+                            break;
+                        }
+                    i++;
+                    if (i == (signed int)d_nchannels - 1)
+                        {
+                            break;
+                        }
+                }
         }
 
     if (global_galileo_iono_map.size() > 0)
         {
-            // IONO data is shared for all the Galileo satellites. Read always at ID=0
-            global_galileo_iono_map.read(0, d_ls_pvt->galileo_iono);
+            // IONO data is shared for all Galileo satellites. Read always at a locked channel
+            signed int i = 0;
+            while(true)
+                {
+                    if (in[i][0].Flag_valid_pseudorange == true)
+                        {
+                            global_galileo_iono_map.read(i, d_ls_pvt->galileo_iono);
+                            break;
+                        }
+                    i++;
+                    if (i == (signed int)d_nchannels - 1)
+                        {
+                            break;
+                        }
+                }
         }
 
     if (global_galileo_almanac_map.size() > 0)
         {
-            // Almanac data is shared for all the Galileo satellites. Read always at ID=0
-            arrived_galileo_almanac = global_galileo_almanac_map.read(0, d_ls_pvt->galileo_almanac);
+            //  data is shared for all Galileo satellites. Read always at a locked channel
+            signed int i = 0;
+            while(true)
+                {
+                    if (in[i][0].Flag_valid_pseudorange == true)
+                        {
+                            arrived_galileo_almanac = global_galileo_almanac_map.read(i, d_ls_pvt->galileo_almanac);
+                            break;
+                        }
+                    i++;
+                    if (i == (signed int)d_nchannels - 1)
+                        {
+                            break;
+                        }
+                }
         }
 
     // ############ 1. READ GPS EPHEMERIS/UTC_MODE/IONO FROM GLOBAL MAPS ####
@@ -188,14 +227,40 @@ int hybrid_pvt_cc::general_work (int noutput_items, gr_vector_int &ninput_items,
 
     if (global_gps_utc_model_map.size() > 0)
         {
-            // UTC MODEL data is shared for all the Galileo satellites. Read always at ID=0
-            global_gps_utc_model_map.read(0, d_ls_pvt->gps_utc_model);
+            // UTC MODEL data is shared for all the GPS satellites. Read always at a locked channel
+            signed int i = 0;
+            while(true)
+                {
+                    if (in[i][0].Flag_valid_pseudorange == true)
+                        {
+                            global_gps_utc_model_map.read(i, d_ls_pvt->gps_utc_model);
+                            break;
+                        }
+                    i++;
+                    if (i == (signed int)d_nchannels - 1)
+                        {
+                            break;
+                        }
+                }
         }
 
     if (global_gps_iono_map.size() > 0)
         {
-            // IONO data is shared for all the Galileo satellites. Read always at ID=0
-            global_gps_iono_map.read(0, d_ls_pvt->gps_iono);
+            // IONO data is shared for all the GPS satellites. Read always at a locked channel
+            signed int i = 0;
+            while(true)
+                {
+                    if (in[i][0].Flag_valid_pseudorange == true)
+                        {
+                            global_gps_iono_map.read(i, d_ls_pvt->gps_iono);
+                            break;
+                        }
+                    i++;
+                    if (i == (signed int)d_nchannels - 1)
+                        {
+                            break;
+                        }
+                }
         }
 
 
@@ -250,6 +315,12 @@ int hybrid_pvt_cc::general_work (int noutput_items, gr_vector_int &ninput_items,
                                         {
                                             rp->log_rinex_obs(rp->obsFile, gps_ephemeris_iter->second, galileo_ephemeris_iter->second, d_rx_time, gnss_pseudoranges_map);
                                         }
+                                    if (!b_rinex_header_updated && (d_ls_pvt->gps_utc_model.d_A0 != 0))
+                                        {
+                                            rp->update_obs_header(rp->obsFile, d_ls_pvt->gps_utc_model);
+                                            rp->update_nav_header(rp->navMixFile, d_ls_pvt->gps_iono,  d_ls_pvt->gps_utc_model, d_ls_pvt->galileo_iono, d_ls_pvt->galileo_utc_model, d_ls_pvt->galileo_almanac);
+                                            b_rinex_header_updated = true;
+                                        }
                                 }
                         }
                 }
@@ -258,17 +329,17 @@ int hybrid_pvt_cc::general_work (int noutput_items, gr_vector_int &ninput_items,
             if (((d_sample_counter % d_display_rate_ms) == 0) and d_ls_pvt->b_valid_position == true)
                 {
                     std::cout << "Position at " << boost::posix_time::to_simple_string(d_ls_pvt->d_position_UTC_time)
-                    << " using "<<d_ls_pvt->d_valid_observations<<" observations is Lat = " << d_ls_pvt->d_latitude_d << " [deg], Long = " << d_ls_pvt->d_longitude_d
+                    << " UTC using "<< d_ls_pvt->d_valid_observations<<" observations is Lat = " << d_ls_pvt->d_latitude_d << " [deg], Long = " << d_ls_pvt->d_longitude_d
                     << " [deg], Height= " << d_ls_pvt->d_height_m << " [m]" << std::endl;
 
                     LOG(INFO) << "Position at " << boost::posix_time::to_simple_string(d_ls_pvt->d_position_UTC_time)
-                    << " using "<<d_ls_pvt->d_valid_observations<<" observations is Lat = " << d_ls_pvt->d_latitude_d << " [deg], Long = " << d_ls_pvt->d_longitude_d
+                    << " UTC using "<< d_ls_pvt->d_valid_observations<<" observations is Lat = " << d_ls_pvt->d_latitude_d << " [deg], Long = " << d_ls_pvt->d_longitude_d
                     << " [deg], Height= " << d_ls_pvt->d_height_m << " [m]";
 
                     std::cout << "Dilution of Precision at " << boost::posix_time::to_simple_string(d_ls_pvt->d_position_UTC_time)
-                    << " using "<<d_ls_pvt->d_valid_observations<<" observations is HDOP = " << d_ls_pvt->d_HDOP << " VDOP = "
+                    << " UTC using "<< d_ls_pvt->d_valid_observations<<" observations is HDOP = " << d_ls_pvt->d_HDOP << " VDOP = "
                     << d_ls_pvt->d_VDOP <<" TDOP = " << d_ls_pvt->d_TDOP
-                    << " GDOP = " << d_ls_pvt->d_GDOP;
+                    << " GDOP = " << d_ls_pvt->d_GDOP << std::endl;
                 }
 
             // MULTIPLEXED FILE RECORDING - Record results to file
@@ -294,7 +365,7 @@ int hybrid_pvt_cc::general_work (int noutput_items, gr_vector_int &ninput_items,
         }
 
     consume_each(1); //one by one
-    return 0;
+    return noutput_items;
 }
 
 

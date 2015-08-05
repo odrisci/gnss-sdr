@@ -11,7 +11,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -21,7 +21,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -57,10 +57,10 @@ public:
     GNSSBlockFactory();
     virtual ~GNSSBlockFactory();
     std::unique_ptr<GNSSBlockInterface> GetSignalSource(std::shared_ptr<ConfigurationInterface> configuration,
-            boost::shared_ptr<gr::msg_queue> queue);
+            boost::shared_ptr<gr::msg_queue> queue, int ID = -1);
 
     std::unique_ptr<GNSSBlockInterface> GetSignalConditioner(std::shared_ptr<ConfigurationInterface> configuration,
-            boost::shared_ptr<gr::msg_queue> queue);
+            boost::shared_ptr<gr::msg_queue> queue, int ID = -1);
 
     std::unique_ptr<GNSSBlockInterface> GetPVT(std::shared_ptr<ConfigurationInterface> configuration,
             boost::shared_ptr<gr::msg_queue> queue);
@@ -69,14 +69,6 @@ public:
             boost::shared_ptr<gr::msg_queue> queue);
 
     std::unique_ptr<GNSSBlockInterface> GetOutputFilter(std::shared_ptr<ConfigurationInterface> configuration,
-            boost::shared_ptr<gr::msg_queue> queue);
-
-    std::unique_ptr<GNSSBlockInterface> GetChannel_GPS(std::shared_ptr<ConfigurationInterface> configuration,
-            std::string acq, std::string trk, std::string tlm, int channel,
-            boost::shared_ptr<gr::msg_queue> queue);
-
-    std::unique_ptr<GNSSBlockInterface> GetChannel_Galileo(std::shared_ptr<ConfigurationInterface> configuration,
-            std::string acq, std::string trk, std::string tlm, int channel,
             boost::shared_ptr<gr::msg_queue> queue);
 
     std::unique_ptr<std::vector<std::unique_ptr<GNSSBlockInterface>>> GetChannels(std::shared_ptr<ConfigurationInterface> configuration,
@@ -91,11 +83,37 @@ public:
             boost::shared_ptr<gr::msg_queue> queue);
 
 private:
+    // DEPRECATED
+    std::unique_ptr<GNSSBlockInterface> GetChannel_GPS(std::shared_ptr<ConfigurationInterface> configuration,
+            std::string acq, std::string trk, std::string tlm, int channel,
+            boost::shared_ptr<gr::msg_queue> queue);
+
+    std::unique_ptr<GNSSBlockInterface> GetChannel_1C(std::shared_ptr<ConfigurationInterface> configuration,
+            std::string acq, std::string trk, std::string tlm, int channel,
+            boost::shared_ptr<gr::msg_queue> queue);
+
+    std::unique_ptr<GNSSBlockInterface> GetChannel_2S(std::shared_ptr<ConfigurationInterface> configuration,
+            std::string acq, std::string trk, std::string tlm, int channel,
+            boost::shared_ptr<gr::msg_queue> queue);
+
+    //DEPRECATED
+    std::unique_ptr<GNSSBlockInterface> GetChannel_Galileo(std::shared_ptr<ConfigurationInterface> configuration,
+            std::string acq, std::string trk, std::string tlm, int channel,
+            boost::shared_ptr<gr::msg_queue> queue);
+
+    std::unique_ptr<GNSSBlockInterface> GetChannel_1B(std::shared_ptr<ConfigurationInterface> configuration,
+            std::string acq, std::string trk, std::string tlm, int channel,
+            boost::shared_ptr<gr::msg_queue> queue);
+
+    std::unique_ptr<GNSSBlockInterface> GetChannel_5X(std::shared_ptr<ConfigurationInterface> configuration,
+            std::string acq, std::string trk, std::string tlm, int channel,
+            boost::shared_ptr<gr::msg_queue> queue);
+
     std::unique_ptr<AcquisitionInterface> GetAcqBlock(
             std::shared_ptr<ConfigurationInterface> configuration,
             std::string role,
             std::string implementation, unsigned int in_streams,
-            unsigned int out_streams, boost::shared_ptr<gr::msg_queue> queue);
+            unsigned int out_streams, gr::msg_queue::sptr queue);
 
     std::unique_ptr<TrackingInterface> GetTrkBlock(
             std::shared_ptr<ConfigurationInterface> configuration,

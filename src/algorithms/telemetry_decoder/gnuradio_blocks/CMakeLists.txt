@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2014  (see AUTHORS file for a list of contributors)
+# Copyright (C) 2012-2015  (see AUTHORS file for a list of contributors)
 #
 # This file is part of GNSS-SDR.
 #
@@ -18,6 +18,7 @@
 
 set(TELEMETRY_DECODER_GR_BLOCKS_SOURCES 
      gps_l1_ca_telemetry_decoder_cc.cc
+     gps_l2_m_telemetry_decoder_cc.cc
      galileo_e1b_telemetry_decoder_cc.cc
      sbas_l1_telemetry_decoder_cc.cc
      galileo_e5a_telemetry_decoder_cc.cc

@@ -6,7 +6,7 @@
 *
 * -------------------------------------------------------------------------
 *
-* Copyright (C) 2010-2012 (see AUTHORS file for a list of contributors)
+* Copyright (C) 2010-2015 (see AUTHORS file for a list of contributors)
 *
 * GNSS-SDR is a software defined Global Navigation
 * Satellite Systems receiver
@@ -16,7 +16,7 @@
 * GNSS-SDR is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
-* at your option) any later version.
+ * (at your option) any later version.
 *
 * GNSS-SDR is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,27 +29,26 @@
 * -------------------------------------------------------------------------
 */
 
-
-
-
+#include <cmath>
 #include <iostream>
 #include <queue>
 #include <memory>
-#include <gtest/gtest.h>
-#include <glog/logging.h>
-#include <gflags/gflags.h>
-#include <gnuradio/msg_queue.h>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
+#include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
+#include <gflags/gflags.h>
+#include <glog/logging.h>
+#include <gnuradio/msg_queue.h>
+#include <gtest/gtest.h>
 #include "concurrent_queue.h"
 #include "concurrent_map.h"
 #include "control_thread.h"
 #include "gps_navigation_message.h"
 
 #include "gps_ephemeris.h"
+#include "gps_cnav_ephemeris.h"
 #include "gps_almanac.h"
 #include "gps_iono.h"
+#include "gps_cnav_iono.h"
 #include "gps_utc_model.h"
 
 #include "galileo_ephemeris.h"
@@ -73,18 +72,20 @@ DECLARE_string(log_dir);
 #include "arithmetic/conjugate_test.cc"
 #include "arithmetic/magnitude_squared_test.cc"
 #include "arithmetic/multiply_test.cc"
+#include "arithmetic/code_generation_test.cc"
 #include "configuration/file_configuration_test.cc"
 #include "configuration/in_memory_configuration_test.cc"
 #include "control_thread/control_message_factory_test.cc"
-//#include "control_thread/control_thread_test.cc"
+#include "control_thread/control_thread_test.cc"
 #include "flowgraph/pass_through_test.cc"
-//#include "flowgraph/gnss_flowgraph_test.cc"
+#include "flowgraph/gnss_flowgraph_test.cc"
 #include "gnss_block/gnss_block_factory_test.cc"
 #include "gnss_block/rtcm_printer_test.cc"
 #include "gnss_block/file_output_filter_test.cc"
 #include "gnss_block/file_signal_source_test.cc"
 #include "gnss_block/fir_filter_test.cc"
 #include "gnss_block/gps_l1_ca_pcps_acquisition_test.cc"
+#include "gnss_block/gps_l2_m_pcps_acquisition_test.cc"
 #include "gnss_block/gps_l1_ca_pcps_acquisition_gsoc2013_test.cc"
 //#include "gnss_block/gps_l1_ca_pcps_multithread_acquisition_gsoc2013_test.cc"
 #if OPENCL_BLOCKS_TEST
@@ -108,20 +109,31 @@ DECLARE_string(log_dir);
 //#include "gnss_block/galileo_e5a_pcps_acquisition_test_2.cc"
 #include "gnss_block/galileo_e5a_pcps_acquisition_gsoc2014_gensource_test.cc"
 #include "gnss_block/galileo_e5a_tracking_test.cc"
+#include "gnss_block/gps_l2_m_dll_pll_tracking_test.cc"
 
 
-
+// For GPS NAVIGATION (L1)
 concurrent_queue<Gps_Ephemeris> global_gps_ephemeris_queue;
 concurrent_queue<Gps_Iono> global_gps_iono_queue;
 concurrent_queue<Gps_Utc_Model> global_gps_utc_model_queue;
 concurrent_queue<Gps_Almanac> global_gps_almanac_queue;
 concurrent_queue<Gps_Acq_Assist> global_gps_acq_assist_queue;
+concurrent_queue<Gps_Ref_Location> global_gps_ref_location_queue;
+concurrent_queue<Gps_Ref_Time> global_gps_ref_time_queue;
 
 concurrent_map<Gps_Ephemeris> global_gps_ephemeris_map;
 concurrent_map<Gps_Iono> global_gps_iono_map;
 concurrent_map<Gps_Utc_Model> global_gps_utc_model_map;
 concurrent_map<Gps_Almanac> global_gps_almanac_map;
 concurrent_map<Gps_Acq_Assist> global_gps_acq_assist_map;
+concurrent_map<Gps_Ref_Location> global_gps_ref_location_map;
+concurrent_map<Gps_Ref_Time> global_gps_ref_time_map;
+
+// For GPS NAVIGATION (L2)
+concurrent_queue<Gps_CNAV_Ephemeris> global_gps_cnav_ephemeris_queue;
+concurrent_map<Gps_CNAV_Ephemeris> global_gps_cnav_ephemeris_map;
+concurrent_queue<Gps_CNAV_Iono> global_gps_cnav_iono_queue;
+concurrent_map<Gps_CNAV_Iono> global_gps_cnav_iono_map;
 
 // For GALILEO NAVIGATION
 concurrent_queue<Galileo_Ephemeris> global_galileo_ephemeris_queue;
@@ -149,8 +161,18 @@ concurrent_map<Sbas_Ephemeris> global_sbas_ephemeris_map;
 int main(int argc, char **argv)
 {
     std::cout << "Running GNSS-SDR Tests..." << std::endl;
+    int res = 0;
     testing::InitGoogleTest(&argc, argv);
     google::ParseCommandLineFlags(&argc, &argv, true);
     google::InitGoogleLogging(argv[0]);
-    return RUN_ALL_TESTS();
+    try
+    {
+            res = RUN_ALL_TESTS();
+    }
+    catch(...)
+    {
+            LOG(WARNING) << "Unexpected catch";
+    }
+    google::ShutDownCommandLineFlags();
+    return res;
 }

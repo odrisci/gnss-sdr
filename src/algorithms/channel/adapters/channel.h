@@ -9,7 +9,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -19,7 +19,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -38,7 +38,7 @@
 #include <string>
 #include <gnuradio/msg_queue.h>
 #include "channel_interface.h"
-#include "gps_l1_ca_channel_fsm.h"
+#include "channel_fsm.h"
 #include "control_message_factory.h"
 #include "concurrent_queue.h"
 #include "gnss_signal.h"
@@ -81,7 +81,7 @@ public:
     TrackingInterface* tracking(){ return trk_; }
     TelemetryDecoderInterface* telemetry(){ return nav_; }
     void start_acquisition();                   //!< Start the State Machine
-    void set_signal(Gnss_Signal gnss_signal_);  //!< Sets the channel GNSS signal
+    void set_signal(const Gnss_Signal& gnss_signal_);  //!< Sets the channel GNSS signal
     void start();                               //!< Start the thread
     void standby();
     /*!
@@ -104,7 +104,7 @@ private:
     bool stop_;
     int message_;
     bool repeat_;
-    GpsL1CaChannelFsm channel_fsm_;
+    ChannelFsm channel_fsm_;
     boost::shared_ptr<gr::msg_queue> queue_;
     concurrent_queue<int> channel_internal_queue_;
     boost::thread ch_thread_;

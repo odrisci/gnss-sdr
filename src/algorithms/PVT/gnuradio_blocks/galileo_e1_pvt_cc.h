@@ -5,7 +5,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -15,7 +15,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -96,6 +96,7 @@ private:
     boost::shared_ptr<gr::msg_queue> d_queue;
     bool d_dump;
     bool b_rinex_header_writen;
+    bool b_rinex_header_updated;
     std::shared_ptr<Rinex_Printer> rp;
     unsigned int d_nchannels;
     std::string d_dump_filename;
@@ -110,7 +111,7 @@ private:
     std::shared_ptr<Nmea_Printer> d_nmea_printer;
     double d_rx_time;
     std::shared_ptr<galileo_e1_ls_pvt> d_ls_pvt;
-    bool pseudoranges_pairCompare_min(std::pair<int,Gnss_Synchro> a, std::pair<int,Gnss_Synchro> b);
+    bool pseudoranges_pairCompare_min(const std::pair<int,Gnss_Synchro>& a, const std::pair<int,Gnss_Synchro>& b);
 
 public:
     ~galileo_e1_pvt_cc (); //!< Default destructor

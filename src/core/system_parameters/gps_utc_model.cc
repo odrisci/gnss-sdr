@@ -5,7 +5,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -15,7 +15,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,6 +29,7 @@
  */
 
 #include "gps_utc_model.h"
+#include <cmath>
 
 Gps_Utc_Model::Gps_Utc_Model()
 {
@@ -62,7 +63,7 @@ double Gps_Utc_Model::utc_time(double gpstime_corrected, int i_GPS_week)
                 }
             else //we are in the same week than the leap second event
                 {
-                    if  (abs(gpstime_corrected - secondOfLeapSecondEvent) > 21600)
+                    if  (std::abs(gpstime_corrected - secondOfLeapSecondEvent) > 21600)
                         {
                             /* 20.3.3.5.2.4a
                              * Whenever the effectivity time indicated by the WN_LSF and the DN values
@@ -103,7 +104,7 @@ double Gps_Utc_Model::utc_time(double gpstime_corrected, int i_GPS_week)
             t_utc_daytime = fmod(gpstime_corrected - Delta_t_UTC, 86400);
         }
 
-    double secondsOfWeekBeforeToday = 43200 * floor(gpstime_corrected / 43200);
+    double secondsOfWeekBeforeToday = 86400 * floor(gpstime_corrected / 86400);
     t_utc = secondsOfWeekBeforeToday + t_utc_daytime;
     return t_utc;
 }

@@ -10,7 +10,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -20,7 +20,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -158,13 +158,13 @@ void galileo_e5a_telemetry_decoder_cc::decode_word(double *page_symbols,int fram
     d_nav.split_page(page_String);
     if(d_nav.flag_CRC_test == true)
         {
-            LOG(INFO) << "Galileo CRC correct on channel " << d_channel;
-            std::cout << "Galileo CRC correct on channel " << d_channel << std::endl;
+            LOG(INFO) << "Galileo CRC correct on channel " << d_channel << " from satellite " << d_satellite;
+            std::cout << "Galileo CRC correct on channel " << d_channel << " from satellite " << d_satellite << std::endl;
         }
     else
         {
-            std::cout << "Galileo CRC error on channel " << d_channel << std::endl;
-            LOG(INFO)<< "Galileo CRC error on channel " << d_channel;
+            std::cout << "Galileo CRC error on channel " << d_channel << " from satellite " << d_satellite << std::endl;
+            LOG(INFO)<< "Galileo CRC error on channel " << d_channel << " from satellite " << d_satellite;
         }
 
     // 4. Push the new navigation data to the queues
@@ -247,7 +247,7 @@ galileo_e5a_telemetry_decoder_cc::galileo_e5a_telemetry_decoder_cc(
 //
     d_sample_counter = 0;
     d_state = 0;
-    d_preamble_lock=false;
+    d_preamble_lock = false;
     d_preamble_index = 0;
     d_preamble_time_seconds = 0;
     d_flag_frame_sync = false;
@@ -260,6 +260,15 @@ galileo_e5a_telemetry_decoder_cc::galileo_e5a_telemetry_decoder_cc(
 
     d_CRC_error_counter = 0;
     d_sign_init = 0;
+
+    d_flag_preamble = false;
+    d_ephemeris_queue = 0;
+    d_iono_queue = 0;
+    d_utc_model_queue = 0;
+    d_almanac_queue = 0;
+    d_channel = 0;
+    Prn_timestamp_at_preamble_ms = 0;
+    flag_TOW_set = false;
 }
 
 galileo_e5a_telemetry_decoder_cc::~galileo_e5a_telemetry_decoder_cc()

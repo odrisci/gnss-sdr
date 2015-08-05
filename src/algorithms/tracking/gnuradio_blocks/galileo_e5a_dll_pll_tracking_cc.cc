@@ -11,7 +11,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -21,7 +21,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -40,6 +40,7 @@
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <gnuradio/io_signature.h>
+#include <gnuradio/fxpt.h>  // fixed point sine and cosine
 #include <glog/logging.h>
 #include "gnss_synchro.h"
 #include "galileo_e5_signal_processing.h"
@@ -173,6 +174,20 @@ Galileo_E5a_Dll_Pll_Tracking_cc::Galileo_E5a_Dll_Pll_Tracking_cc(
     d_CN0_SNV_dB_Hz = 0;
     d_carrier_lock_fail_counter = 0;
     d_carrier_lock_threshold = CARRIER_LOCK_THRESHOLD;
+
+    d_channel_internal_queue = 0;
+    d_acquisition_gnss_synchro = 0;
+    d_channel = 0;
+    tmp_E = 0;
+    tmp_P = 0;
+    tmp_L = 0;
+    d_acq_code_phase_samples = 0;
+    d_acq_carrier_doppler_hz = 0;
+    d_carrier_doppler_hz = 0;
+    d_acc_carrier_phase_rad = 0;
+    d_code_phase_samples = 0;
+    d_acc_code_phase_secs = 0;
+    d_state = 0;
 
     systemName["E"] = std::string("Galileo");
 }
@@ -364,18 +379,22 @@ void Galileo_E5a_Dll_Pll_Tracking_cc::update_local_code()
 
 }
 
+
 void Galileo_E5a_Dll_Pll_Tracking_cc::update_local_carrier()
 {
-    float phase_rad, phase_step_rad;
+    float sin_f, cos_f;
+    float phase_step_rad = static_cast<float>(2 * GALILEO_PI) * d_carrier_doppler_hz / static_cast<float>(d_fs_in);
+    int phase_step_rad_i = gr::fxpt::float_to_fixed(phase_step_rad);
+    int phase_rad_i = gr::fxpt::float_to_fixed(d_rem_carr_phase_rad);
 
-    phase_step_rad = 2 * static_cast<float>(GALILEO_PI) * d_carrier_doppler_hz / static_cast<float>(d_fs_in);
-    phase_rad = d_rem_carr_phase_rad;
     for(int i = 0; i < d_current_prn_length_samples; i++)
         {
-            d_carr_sign[i] = gr_complex(cos(phase_rad), -sin(phase_rad));
-            phase_rad += phase_step_rad;
+            gr::fxpt::sincos(phase_rad_i, &sin_f, &cos_f);
+            d_carr_sign[i] = std::complex<float>(cos_f, -sin_f);
+            phase_rad_i += phase_step_rad_i;
         }
 }
+
 
 int Galileo_E5a_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_int &ninput_items,
         gr_vector_const_void_star &input_items, gr_vector_void_star &output_items)
@@ -423,6 +442,7 @@ int Galileo_E5a_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_
 		d_Prompt = gr_complex(0,0);
 		d_Late = gr_complex(0,0);
 		d_Prompt_data = gr_complex(0,0);
+                d_acquisition_gnss_synchro->Flag_valid_pseudorange = false;
 
 		*out[0] = *d_acquisition_gnss_synchro;
 
@@ -448,10 +468,12 @@ int Galileo_E5a_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_
 		current_synchro_data.Code_phase_secs = 0.0;
 		current_synchro_data.CN0_dB_hz = 0.0;
 		current_synchro_data.Flag_valid_tracking = false;
+                current_synchro_data.Flag_valid_pseudorange = false;
 
 		*out[0] = current_synchro_data;
 		consume_each(samples_offset); //shift input to perform alignment with local replica
 		return 1;
+		break;
 	    }
 	case 2:
 	    {
@@ -675,6 +697,38 @@ int Galileo_E5a_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_
 			current_synchro_data.Carrier_phase_rads = static_cast<double>(d_acc_carrier_phase_rad);
 			current_synchro_data.Carrier_Doppler_hz = static_cast<double>(d_carrier_doppler_hz);
 			current_synchro_data.CN0_dB_hz = static_cast<double>(d_CN0_SNV_dB_Hz);
+            current_synchro_data.Flag_valid_tracking = false;
+
+
+            // ########## DEBUG OUTPUT
+			   /*!
+				*  \todo The stop timer has to be moved to the signal source!
+				*/
+			   // debug: Second counter in channel 0
+			   if (d_channel == 0)
+				   {
+					   if (floor(d_sample_counter / d_fs_in) != d_last_seg)
+						   {
+							   d_last_seg = floor(d_sample_counter / d_fs_in);
+							   std::cout << "Current input signal time = " << d_last_seg << " [s]" << std::endl;
+							   std::cout  << "Galileo E5 Tracking CH " << d_channel <<  ": Satellite "
+									<< Gnss_Satellite(systemName[sys], d_acquisition_gnss_synchro->PRN) << ", CN0 = " << d_CN0_SNV_dB_Hz << " [dB-Hz] "<<"Doppler="<<d_carrier_doppler_hz<<" [Hz]"<< std::endl;
+							   //if (d_last_seg==5) d_carrier_lock_fail_counter=500; //DEBUG: force unlock!
+						   }
+				   }
+			   else
+				   {
+					   if (floor(d_sample_counter / d_fs_in) != d_last_seg)
+						   {
+							   d_last_seg = floor(d_sample_counter / d_fs_in);
+							   std::cout  << "Galileo E5 Tracking CH " << d_channel <<  ": Satellite "
+							   << Gnss_Satellite(systemName[sys], d_acquisition_gnss_synchro->PRN)
+							   << ", CN0 = " << d_CN0_SNV_dB_Hz << " [dB-Hz] "<<"Doppler="<<d_carrier_doppler_hz<<" [Hz]"<< std::endl;
+							   //std::cout<<"TRK CH "<<d_channel<<" Carrier_lock_test="<<d_carrier_lock_test<< std::endl;
+						   }
+				   }
+
+
 		    }
 		else
 		    {
@@ -686,8 +740,27 @@ int Galileo_E5a_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_
 			current_synchro_data.Code_phase_secs = 0.0;
 			current_synchro_data.CN0_dB_hz = 0.0;
 			current_synchro_data.Flag_valid_tracking = false;
+
+            // ########## DEBUG OUTPUT (TIME ONLY for channel 0 when tracking is disabled)
+            /*!
+             *  \todo The stop timer has to be moved to the signal source!
+             */
+            // stream to collect cout calls to improve thread safety
+            std::stringstream tmp_str_stream;
+            if (floor(d_sample_counter / d_fs_in) != d_last_seg)
+                {
+                    d_last_seg = floor(d_sample_counter / d_fs_in);
+
+                    if (d_channel == 0)
+                        {
+                            // debug: Second counter in channel 0
+                            tmp_str_stream << "Current input signal time = " << d_last_seg << " [s]" << std::endl << std::flush;
+                            std::cout << tmp_str_stream.rdbuf() << std::flush;
+                        }
+                }
 		    }
 		*out[0] = current_synchro_data;
+		break;
 	    }
     }
 

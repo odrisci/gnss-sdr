@@ -10,7 +10,7 @@
  *
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2014  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -20,7 +20,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -115,6 +115,8 @@ private:
                                // using the configuration parameters (number of channels and max channels in acquisition)
     bool connected_;
     bool running_;
+    int sources_count_;
+
     unsigned int channels_count_;
     unsigned int acq_channels_count_;
     unsigned int max_acq_channels_;
@@ -122,12 +124,14 @@ private:
     std::string config_file_;
     std::shared_ptr<ConfigurationInterface> configuration_;
     std::shared_ptr<GNSSBlockFactory> block_factory_;
-    std::shared_ptr<std::vector<std::shared_ptr<GNSSBlockInterface>>> blocks_ = std::make_shared<std::vector<std::shared_ptr<GNSSBlockInterface>>>();
-    std::shared_ptr<GNSSBlockInterface> sig_source_;
-    std::shared_ptr<GNSSBlockInterface> sig_conditioner_;
+
+    std::vector<std::shared_ptr<GNSSBlockInterface>> sig_source_;
+    std::vector<std::shared_ptr<GNSSBlockInterface>> sig_conditioner_;
+
     std::shared_ptr<GNSSBlockInterface> observables_;
     std::shared_ptr<GNSSBlockInterface> pvt_;
     std::shared_ptr<GNSSBlockInterface> output_filter_;
+
     std::vector<std::shared_ptr<ChannelInterface>> channels_;
     gr::top_block_sptr top_block_;
     boost::shared_ptr<gr::msg_queue> queue_;

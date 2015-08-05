@@ -5,7 +5,7 @@
  * \author Mara Branzanti 2013. mara.branzanti(at)gmail.com
  * -------------------------------------------------------------------------
  *
- * Copyright (C) 2010-2013  (see AUTHORS file for a list of contributors)
+ * Copyright (C) 2010-2015  (see AUTHORS file for a list of contributors)
  *
  * GNSS-SDR is a software defined Global Navigation
  *          Satellite Systems receiver
@@ -15,7 +15,7 @@
  * GNSS-SDR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * at your option) any later version.
+ * (at your option) any later version.
  *
  * GNSS-SDR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -67,8 +67,22 @@ Galileo_Ephemeris::Galileo_Ephemeris()
     E1B_HS_5 = 0;
     E5b_DVS_5 = 0;
     E1B_DVS_5 = 0;
-    BGD_E1E5a_5 = 0;        //!< E1-E5a Broadcast Group Delay [s]
-    BGD_E1E5b_5 = 0;        //!< E1-E5b Broadcast Group Delay [s]
+    BGD_E1E5a_5 = 0;        // E1-E5a Broadcast Group Delay [s]
+    BGD_E1E5b_5 = 0;        // E1-E5b Broadcast Group Delay [s]
+
+    Galileo_satClkDrift = 0.0;
+    Galileo_dtr = 0.0;
+
+    // satellite positions
+    d_satpos_X = 0.0;
+    d_satpos_Y = 0.0;
+    d_satpos_Z = 0.0;
+    // Satellite velocity
+    d_satvel_X = 0.0;
+    d_satvel_Y = 0.0;
+    d_satvel_Z = 0.0;
+
+    i_satellite_PRN = 0;
 }
 
 
