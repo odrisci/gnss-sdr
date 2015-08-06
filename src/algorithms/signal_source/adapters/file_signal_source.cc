@@ -182,7 +182,7 @@ FileSignalSource::FileSignalSource(ConfigurationInterface* configuration,
     double signal_duration_s;
     signal_duration_s = static_cast<double>(samples_) * ( 1 / static_cast<double>(sampling_frequency_));
 
-    if ((item_type_.compare("gr_complex") != 0) || (item_type_.compare("ishort") != 0) || (item_type_.compare("ibyte") != 0) )  // signal is complex (interleaved)
+    if ( (item_type_.compare("ishort") == 0) || (item_type_.compare("ibyte") == 0) )  // signal is complex (interleaved)
         {
             signal_duration_s /= 2;
         }
