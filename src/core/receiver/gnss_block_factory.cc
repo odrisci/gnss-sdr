@@ -122,6 +122,10 @@
 #include "flexiband_signal_source.h"
 #endif
 
+#if CUDA_GPU_ACCEL
+#include "gps_l1_ca_dll_pll_tracking_gpu.h"
+#endif
+
 
 using google::LogMessage;
 
@@ -1611,6 +1615,14 @@ std::unique_ptr<TrackingInterface> GNSSBlockFactory::GetTrkBlock(
                     out_streams, queue));
             block = std::move(block_);
         }
+#if CUDA_GPU_ACCEL
+    else if (implementation.compare("GPS_L1_CA_DLL_PLL_Tracking_GPU") == 0)
+        {
+            std::unique_ptr<TrackingInterface> block_(new GpsL1CaDllPllTrackingGPU(configuration.get(), role, in_streams,
+                    out_streams, queue));
+            block = std::move(block_);
+        }
+#endif
     else
         {
             // Log fatal. This causes execution to stop.
