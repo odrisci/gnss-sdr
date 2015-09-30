@@ -34,7 +34,7 @@ $ sudo apt-get install build-essential cmake git libboost-dev libboost-date-time
        libboost-system-dev libboost-filesystem-dev libboost-thread-dev libboost-chrono-dev \
        libboost-serialization-dev libboost-program-options-dev libboost-test-dev \
        liblog4cpp5-dev libuhd-dev gnuradio-dev gr-osmosdr libblas-dev liblapack-dev \
-       libarmadillo-dev libgflags-dev libgoogle-glog-dev libssl-dev libgtest-dev
+       libarmadillo-dev libgflags-dev libgoogle-glog-dev libgnutls-openssl-dev libgtest-dev
 ~~~~~~
 
 Once you have installed these packages, you can jump directly to [how to download the source code and build GNSS-SDR](#download-and-build-linux). Alternatively, if you need to manually install those libraries, please keep reading. 
@@ -94,9 +94,9 @@ In case you do not want to use PyBOMBS and prefer to build and install GNU Radio
 $ sudo apt-get install libopenblas-dev liblapack-dev   # For Debian/Ubuntu/LinuxMint
 $ sudo yum install lapack-devel blas-devel             # For Fedora/CentOS/RHEL
 $ sudo zypper install lapack-devel blas-devel          # For OpenSUSE
-$ wget http://sourceforge.net/projects/arma/files/armadillo-5.400.2.tar.gz
-$ tar xvfz armadillo-5.400.2.tar.gz
-$ cd armadillo-5.400.2
+$ wget http://sourceforge.net/projects/arma/files/armadillo-5.400.3.tar.gz
+$ tar xvfz armadillo-5.400.3.tar.gz
+$ cd armadillo-5.400.3
 $ cmake .
 $ make
 $ sudo make install
@@ -154,11 +154,11 @@ changing /home/username/gtest-1.7.0 by the actual directory where you downloaded
 
    
 
-#### Install the [SSL development libraries](https://www.openssl.org/ "OpenSSL's Homepage"):
+#### Install the [GnuTLS library](http://www.gnutls.org/ "GnuTLS's Homepage"):
 
 ~~~~~~ 
-$ sudo apt-get install libssl-dev    # For Debian/Ubuntu/LinuxMint
-$ sudo yum install openssl-devel     # For Fedora/CentOS/RHEL
+$ sudo apt-get install libgnutls-openssl-dev    # For Debian/Ubuntu/LinuxMint
+$ sudo yum install libgnutls-openssl-devel      # For Fedora/CentOS/RHEL
 ~~~~~~ 
 
    
@@ -378,7 +378,7 @@ Using this option, all SIMD instructions are exclusively accessed via VOLK, whic
 
 ### Mac OS X 10.9 (Mavericks) and 10.10 (Yosemite)
 
-If you still have not installed [Xcode](http://developer.apple.com/xcode/), do it now from the App Store (it's free). You will also need the Xcode Command Line Tools. Launch the Terminal, found in /Applications/Utilities/, and type:
+If you still have not installed [Xcode](http://developer.apple.com/xcode/ "Xcode"), do it now from the App Store (it's free). You will also need the Xcode Command Line Tools. Launch the Terminal, found in /Applications/Utilities/, and type:
 
 ~~~~~~ 
 $ xcode-select --install
@@ -404,6 +404,7 @@ $ sudo port upgrade outdated
 $ sudo port install doxygen +latex
 $ sudo port install gnuradio
 $ sudo port install armadillo
+$ sudo port install gnutls
 $ sudo port install google-glog +gflags
 ~~~~~~ 
 
@@ -481,11 +482,21 @@ $ open ../docs/html/index.html
 
 GNSS-SDR comes with a library with some specific Vector-Optimized Library of Kernels (VOLK) and a profiler that will build a config file for the best SIMD architecture for your processor. Run ``volk_gnsssdr_profile`` that is installed into $PREFIX/bin. This program tests all known VOLK kernels for each architecture supported by the processor. When finished, it will write to $HOME/.volk_gnsssdr/volk_gnsssdr_config the best architecture for the VOLK function. This file is read when using a function to know the best version of the function to execute. It mimics GNU Radio's VOLK library, so if you still have not run ```volk_profile```, this is a good moment to do so.
 
+###### Other package managers 
+
+GNU Radio and other dependencies can also be installed using other package managers than Macports, such as [Fink](http://www.finkproject.org/ "Fink") or [Homebrew](http://brew.sh/ "Homebrew"). Since the version of Python that ships with OS X is great for learning but it is not good for development, you could have another Python executable in a non-standard location. If that is the case, you need to inform GNSS-SDR's configuration system by defining the PYTHON_EXECUTABLE variable as:
+
+~~~~~~
+cmake -DPYTHON_EXECUTABLE=/path/to/bin/python ../
+~~~~~~ 
+
+The CMake script will create Makefiles that download, build and link Armadillo, Gflags, Glog and Google Test on the fly at compile time if they are not detected in your machine.
+
 
 Updating GNSS-SDR
 =================
 
-If you cloned GNSS-SDR some days ago, it is possible that some developer has updated files at the Git repository. You can update your working copy by doing:
+If you cloned GNSS-SDR some time ago, it is possible that some developer has updated files at the Git repository. You can update your working copy by doing:
 
 ~~~~~~ 
 $ git checkout master      # Switch to branch you want to update
@@ -673,9 +684,32 @@ SignalSource.gain=60 ; Front-end gain in dB
 SignalSource.subdevice=B:0 ; UHD subdevice specification (for USRP1 use A:0 or B:0, for USRP B210 use A:0)
 ~~~~~~ 
 
+
+***Example: Configuring the USRP X300 with two front-ends for receiving signals in L1 and L2 bands***
+
+~~~~~~ 
+;######### SIGNAL_SOURCE CONFIG ############
+SignalSource.implementation=UHD_Signal_Source
+SignalSource.device_address=192.168.40.2 ; Put your USRP IP address here
+SignalSource.item_type=gr_complex
+SignalSource.RF_channels=2
+SignalSource.sampling_frequency=4000000
+SignalSource.subdevice=A:0 B:0
+
+;######### RF Channels specific settings ######
+SignalSource.freq0=1575420000
+SignalSource.gain0=50
+SignalSource.samples0=0
+SignalSource.dump0=false
+
+SignalSource.freq1=1227600000
+SignalSource.gain1=50
+SignalSource.samples1=0
+SignalSource.dump1=false
+~~~~~~ 
+
+
 Other examples are available at [gnss-sdr/conf/](./conf/).
-
-
 
 ### Signal Conditioner
 
