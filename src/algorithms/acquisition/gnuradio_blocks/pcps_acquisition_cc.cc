@@ -40,6 +40,7 @@
 #include <volk/volk.h>
 #include "gnss_signal_processing.h"
 #include "control_message_factory.h"
+#include <boost/filesystem.hpp>
 
 using google::LogMessage;
 
@@ -309,9 +310,19 @@ int pcps_acquisition_cc::general_work(int noutput_items,
                             std::stringstream filename;
                             std::streamsize n = 2 * sizeof(float) * (d_fft_size); // complex file write
                             filename.str("");
-                            filename << "../data/test_statistics_" << d_gnss_synchro->System
+
+                            boost::filesystem::path p = d_dump_filename;
+                            filename << p.parent_path().string()
+                                     << boost::filesystem::path::preferred_separator
+                                     << p.stem().string()
+                                     << "_" << d_gnss_synchro->System
                                      <<"_" << d_gnss_synchro->Signal << "_sat_"
-                                     << d_gnss_synchro->PRN << "_doppler_" <<  doppler << ".dat";
+                                     << d_gnss_synchro->PRN << "_doppler_"
+                                     <<  doppler
+                                     << p.extension().string();
+
+                            DLOG(INFO) << "Writing ACQ out to " << filename.str();
+
                             d_dump_file.open(filename.str().c_str(), std::ios::out | std::ios::binary);
                             d_dump_file.write((char*)d_ifft->get_outbuf(), n); //write directly |abs(x)|^2 in this Doppler bin?
                             d_dump_file.close();
