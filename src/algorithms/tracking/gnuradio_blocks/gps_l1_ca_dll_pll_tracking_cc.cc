@@ -390,7 +390,7 @@ int Gps_L1_Ca_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_in
             gr_complex phase_as_complex( std::cos( d_rem_carr_phase_rad ),
                         -std::sin( d_rem_carr_phase_rad ) );
 
-            double carrier_doppler_inc_rad = 2.0*M_PI*d_carrier_doppler_hz/d_fs_in;
+            double carrier_doppler_inc_rad = 2.0*M_PI*(d_if_freq + d_carrier_doppler_hz )/d_fs_in;
 
             gr_complex phase_inc_as_complex( std::cos( carrier_doppler_inc_rad ),
                     -std::sin( carrier_doppler_inc_rad ) );
@@ -451,7 +451,7 @@ int Gps_L1_Ca_Dll_Pll_Tracking_cc::general_work (int noutput_items, gr_vector_in
             //carrier phase accumulator for (K) doppler estimation
             d_acc_carrier_phase_rad = d_acc_carrier_phase_rad + GPS_TWO_PI * d_carrier_doppler_hz * GPS_L1_CA_CODE_PERIOD;
             //remanent carrier phase to prevent overflow in the code NCO
-            d_rem_carr_phase_rad = d_rem_carr_phase_rad + GPS_TWO_PI * d_carrier_doppler_hz * GPS_L1_CA_CODE_PERIOD;
+            d_rem_carr_phase_rad = d_rem_carr_phase_rad + GPS_TWO_PI * ( d_if_freq + d_carrier_doppler_hz ) * GPS_L1_CA_CODE_PERIOD;
             d_rem_carr_phase_rad = fmod(d_rem_carr_phase_rad, GPS_TWO_PI);
 
             // ################## DLL ##########################################################
