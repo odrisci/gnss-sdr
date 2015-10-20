@@ -157,7 +157,7 @@ void pcps_acquisition_cc::init()
         {
             d_grid_doppler_wipeoffs[doppler_index] = static_cast<gr_complex*>(volk_malloc(d_fft_size * sizeof(gr_complex), volk_get_alignment()));
             int doppler = -static_cast<int>(d_doppler_max) + d_doppler_step * doppler_index;
-            complex_exp_gen(d_grid_doppler_wipeoffs[doppler_index], d_freq - doppler, d_fs_in, d_fft_size);
+            complex_exp_gen(d_grid_doppler_wipeoffs[doppler_index], -d_freq - doppler, d_fs_in, d_fft_size);
         }
 }
 
