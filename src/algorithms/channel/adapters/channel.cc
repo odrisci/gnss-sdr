@@ -109,6 +109,7 @@ Channel::Channel(ConfigurationInterface *configuration, unsigned int channel,
 // Destructor
 Channel::~Channel()
 {
+    ch_thread_.join();
     delete acq_;
     delete trk_;
     delete nav_;
@@ -206,8 +207,11 @@ void Channel::run()
 {
     while (!stop_)
         {
-            channel_internal_queue_.wait_and_pop(message_);
-            process_channel_messages();
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( channel_internal_queue_.try_pop(message_) )
+            {
+                process_channel_messages();
+            }
         }
 }
 

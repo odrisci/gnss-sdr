@@ -612,27 +612,31 @@ void ControlThread::gps_acq_assist_data_collector()
     Gps_Acq_Assist gps_acq_old;
     while(stop_ == false)
         {
-            global_gps_acq_assist_queue.wait_and_pop(gps_acq);
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( global_gps_acq_assist_queue.try_pop(gps_acq) )
+            {
 
-            // DEBUG MESSAGE
-            std::cout << "Acquisition assistance record has arrived from SAT ID "
-                      << gps_acq.i_satellite_PRN
-                      << " with Doppler "
-                      << gps_acq.d_Doppler0
-                      << " [Hz] "<< std::endl;
-            // insert new acq record to the global ephemeris map
-            if (global_gps_acq_assist_map.read(gps_acq.i_satellite_PRN,gps_acq_old))
-                {
-                    std::cout << "Acquisition assistance record updated" << std::endl;
-                    global_gps_acq_assist_map.write(gps_acq.i_satellite_PRN, gps_acq);
+                // DEBUG MESSAGE
+                std::cout << "Acquisition assistance record has arrived from SAT ID "
+                        << gps_acq.i_satellite_PRN
+                        << " with Doppler "
+                        << gps_acq.d_Doppler0
+                        << " [Hz] "<< std::endl;
+                // insert new acq record to the global ephemeris map
+                if (global_gps_acq_assist_map.read(gps_acq.i_satellite_PRN,gps_acq_old))
+                    {
+                        std::cout << "Acquisition assistance record updated" << std::endl;
+                        global_gps_acq_assist_map.write(gps_acq.i_satellite_PRN, gps_acq);
 
-                }
-            else
-                {
-                    // insert new acq record
-                    LOG(INFO) << "New acq assist record inserted";
-                    global_gps_acq_assist_map.write(gps_acq.i_satellite_PRN, gps_acq);
-                }
+                    }
+                else
+                    {
+                        // insert new acq record
+                        LOG(INFO) << "New acq assist record inserted";
+                        global_gps_acq_assist_map.write(gps_acq.i_satellite_PRN, gps_acq);
+                    }
+            }
+
         }
 }
 
@@ -644,42 +648,46 @@ void ControlThread::gps_ephemeris_data_collector()
     Gps_Ephemeris gps_eph_old;
     while(stop_ == false)
         {
-            global_gps_ephemeris_queue.wait_and_pop(gps_eph);
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( global_gps_ephemeris_queue.try_pop(gps_eph) )
+            {
 
-            // DEBUG MESSAGE
-            LOG(INFO) << "Ephemeris record has arrived from SAT ID "
-                      << gps_eph.i_satellite_PRN << " (Block "
-                      <<  gps_eph.satelliteBlock[gps_eph.i_satellite_PRN] << ")";
-            // insert new ephemeris record to the global ephemeris map
-            if (global_gps_ephemeris_map.read(gps_eph.i_satellite_PRN, gps_eph_old))
-                {
-                    // Check the EPHEMERIS timestamp. If it is newer, then update the ephemeris
-                    if (gps_eph.i_GPS_week > gps_eph_old.i_GPS_week)
-                        {
-                            std::cout << "Ephemeris record updated (GPS week=" << gps_eph.i_GPS_week << std::endl;
-                            global_gps_ephemeris_map.write(gps_eph.i_satellite_PRN, gps_eph);
-                        }
-                    else
-                        {
-                            if (gps_eph.d_Toe > gps_eph_old.d_Toe)
-                                {
-                                    LOG(INFO) << "Ephemeris record updated (Toe=" << gps_eph.d_Toe;
-                                    global_gps_ephemeris_map.write(gps_eph.i_satellite_PRN, gps_eph);
-                                }
-                            else
-                                {
-                                    LOG(INFO) << "Not updating the existing ephemeris";
-                                }
-                        }
-                }
-            else
-                {
-                    // insert new ephemeris record
-                    LOG(INFO) << "New Ephemeris record inserted with Toe="
-                              << gps_eph.d_Toe<<" and GPS Week="
-                              << gps_eph.i_GPS_week;
-                    global_gps_ephemeris_map.write(gps_eph.i_satellite_PRN, gps_eph);
-                }
+                // DEBUG MESSAGE
+                LOG(INFO) << "Ephemeris record has arrived from SAT ID "
+                        << gps_eph.i_satellite_PRN << " (Block "
+                        <<  gps_eph.satelliteBlock[gps_eph.i_satellite_PRN] << ")";
+                // insert new ephemeris record to the global ephemeris map
+                if (global_gps_ephemeris_map.read(gps_eph.i_satellite_PRN, gps_eph_old))
+                    {
+                        // Check the EPHEMERIS timestamp. If it is newer, then update the ephemeris
+                        if (gps_eph.i_GPS_week > gps_eph_old.i_GPS_week)
+                            {
+                                std::cout << "Ephemeris record updated (GPS week=" << gps_eph.i_GPS_week << std::endl;
+                                global_gps_ephemeris_map.write(gps_eph.i_satellite_PRN, gps_eph);
+                            }
+                        else
+                            {
+                                if (gps_eph.d_Toe > gps_eph_old.d_Toe)
+                                    {
+                                        LOG(INFO) << "Ephemeris record updated (Toe=" << gps_eph.d_Toe;
+                                        global_gps_ephemeris_map.write(gps_eph.i_satellite_PRN, gps_eph);
+                                    }
+                                else
+                                    {
+                                        LOG(INFO) << "Not updating the existing ephemeris";
+                                    }
+                            }
+                    }
+                else
+                    {
+                        // insert new ephemeris record
+                        LOG(INFO) << "New Ephemeris record inserted with Toe="
+                                << gps_eph.d_Toe<<" and GPS Week="
+                                << gps_eph.i_GPS_week;
+                        global_gps_ephemeris_map.write(gps_eph.i_satellite_PRN, gps_eph);
+                    }
+            }
+
         }
 }
 
@@ -691,46 +699,50 @@ void ControlThread::galileo_ephemeris_data_collector()
     Galileo_Ephemeris galileo_eph_old;
     while(stop_ == false)
         {
-            global_galileo_ephemeris_queue.wait_and_pop(galileo_eph);
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( global_galileo_ephemeris_queue.try_pop(galileo_eph) )
+            {
 
-            // DEBUG MESSAGE
-            std::cout << "Galileo Ephemeris record has arrived from SAT ID "
-                      << galileo_eph.SV_ID_PRN_4 << std::endl;
+                // DEBUG MESSAGE
+                std::cout << "Galileo Ephemeris record has arrived from SAT ID "
+                        << galileo_eph.SV_ID_PRN_4 << std::endl;
 
-            // insert new ephemeris record to the global ephemeris map
-            if (global_galileo_ephemeris_map.read(galileo_eph.SV_ID_PRN_4, galileo_eph_old))
-                {
-                    // Check the EPHEMERIS timestamp. If it is newer, then update the ephemeris
-                    if (galileo_eph.WN_5 > galileo_eph_old.WN_5) //further check because it is not clear when IOD is reset
-                        {
-                            LOG(INFO) << "Galileo Ephemeris record in global map updated -- GALILEO Week Number ="
-                                      << galileo_eph.WN_5;
-                            global_galileo_ephemeris_map.write(galileo_eph.SV_ID_PRN_4,galileo_eph);
-                        }
-                    else
-                        {
-                            if (galileo_eph.IOD_ephemeris > galileo_eph_old.IOD_ephemeris)
-                                {
-                                    LOG(INFO) << "Galileo Ephemeris record updated in global map-- IOD_ephemeris ="
-                                              << galileo_eph.IOD_ephemeris;
-                                    global_galileo_ephemeris_map.write(galileo_eph.SV_ID_PRN_4, galileo_eph);
-                                    LOG(INFO) << "IOD_ephemeris OLD: " << galileo_eph_old.IOD_ephemeris;
-                                    LOG(INFO) << "satellite: " << galileo_eph.SV_ID_PRN_4;
-                                }
-                            else
-                                {
-                                    LOG(INFO) << "Not updating the existing Galileo ephemeris, IOD is not changing";
-                                }
-                        }
-                }
-            else
-                {
-                    // insert new ephemeris record
-                    LOG(INFO) << "Galileo New Ephemeris record inserted in global map with TOW =" << galileo_eph.TOW_5
-                              << ", GALILEO Week Number =" << galileo_eph.WN_5
-                              << " and Ephemeris IOD = " << galileo_eph.IOD_ephemeris;
-                    global_galileo_ephemeris_map.write(galileo_eph.SV_ID_PRN_4, galileo_eph);
-                }
+                // insert new ephemeris record to the global ephemeris map
+                if (global_galileo_ephemeris_map.read(galileo_eph.SV_ID_PRN_4, galileo_eph_old))
+                    {
+                        // Check the EPHEMERIS timestamp. If it is newer, then update the ephemeris
+                        if (galileo_eph.WN_5 > galileo_eph_old.WN_5) //further check because it is not clear when IOD is reset
+                            {
+                                LOG(INFO) << "Galileo Ephemeris record in global map updated -- GALILEO Week Number ="
+                                        << galileo_eph.WN_5;
+                                global_galileo_ephemeris_map.write(galileo_eph.SV_ID_PRN_4,galileo_eph);
+                            }
+                        else
+                            {
+                                if (galileo_eph.IOD_ephemeris > galileo_eph_old.IOD_ephemeris)
+                                    {
+                                        LOG(INFO) << "Galileo Ephemeris record updated in global map-- IOD_ephemeris ="
+                                                << galileo_eph.IOD_ephemeris;
+                                        global_galileo_ephemeris_map.write(galileo_eph.SV_ID_PRN_4, galileo_eph);
+                                        LOG(INFO) << "IOD_ephemeris OLD: " << galileo_eph_old.IOD_ephemeris;
+                                        LOG(INFO) << "satellite: " << galileo_eph.SV_ID_PRN_4;
+                                    }
+                                else
+                                    {
+                                        LOG(INFO) << "Not updating the existing Galileo ephemeris, IOD is not changing";
+                                    }
+                            }
+                    }
+                else
+                    {
+                        // insert new ephemeris record
+                        LOG(INFO) << "Galileo New Ephemeris record inserted in global map with TOW =" << galileo_eph.TOW_5
+                                << ", GALILEO Week Number =" << galileo_eph.WN_5
+                                << " and Ephemeris IOD = " << galileo_eph.IOD_ephemeris;
+                        global_galileo_ephemeris_map.write(galileo_eph.SV_ID_PRN_4, galileo_eph);
+                    }
+            }
+
         }
 
 }
@@ -741,11 +753,15 @@ void ControlThread::gps_iono_data_collector()
     Gps_Iono gps_iono;
     while(stop_ == false)
         {
-            global_gps_iono_queue.wait_and_pop(gps_iono);
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( global_gps_iono_queue.try_pop(gps_iono) )
+            {
 
-            LOG(INFO) << "New IONO record has arrived ";
-            // there is no timestamp for the iono data, new entries must always be added
-            global_gps_iono_map.write(0, gps_iono);
+                LOG(INFO) << "New IONO record has arrived ";
+                // there is no timestamp for the iono data, new entries must always be added
+                global_gps_iono_map.write(0, gps_iono);
+            }
+
         }
 }
 
@@ -755,11 +771,15 @@ void ControlThread::galileo_almanac_data_collector()
     Galileo_Almanac galileo_almanac;
     while(stop_ == false)
         {
-            global_galileo_almanac_queue.wait_and_pop(galileo_almanac);
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( global_galileo_almanac_queue.try_pop(galileo_almanac) )
+            {
 
-            LOG(INFO) << "New galileo_almanac record has arrived ";
-            // there is no timestamp for the galileo_almanac data, new entries must always be added
-            global_galileo_almanac_map.write(0, galileo_almanac);
+                LOG(INFO) << "New galileo_almanac record has arrived ";
+                // there is no timestamp for the galileo_almanac data, new entries must always be added
+                global_galileo_almanac_map.write(0, galileo_almanac);
+            }
+
         }
 }
 
@@ -769,40 +789,44 @@ void ControlThread::galileo_iono_data_collector()
     Galileo_Iono galileo_iono_old;
     while(stop_ == false)
         {
-            global_galileo_iono_queue.wait_and_pop(galileo_iono);
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( global_galileo_iono_queue.try_pop(galileo_iono) )
+            {
 
-            // DEBUG MESSAGE
-            LOG(INFO) << "Iono record has arrived";
+                // DEBUG MESSAGE
+                LOG(INFO) << "Iono record has arrived";
 
-            // insert new Iono record to the global Iono map
-            if (global_galileo_iono_map.read(0, galileo_iono_old))
-                {
-                    // Check the Iono timestamp from UTC page (page 6). If it is newer, then update the Iono parameters
-                    if (galileo_iono.WN_5 > galileo_iono_old.WN_5)
-                        {
-                            LOG(INFO) << "IONO record updated in global map--new GALILEO UTC-IONO Week Number";
-                            global_galileo_iono_map.write(0, galileo_iono);
-                        }
-                    else
-                        {
-                            if (galileo_iono.TOW_5 > galileo_iono_old.TOW_5)
-                                {
-                                    LOG(INFO) << "IONO record updated in global map--new GALILEO UTC-IONO time of Week";
-                                    global_galileo_iono_map.write(0, galileo_iono);
-                                    //std::cout << "GALILEO IONO time of Week old: " << galileo_iono_old.t0t_6<<std::endl;
-                                }
-                            else
-                                {
-                                    LOG(INFO) << "Not updating the existing Iono parameters in global map, Iono timestamp is not changing";
-                                }
-                        }
-                }
-            else
-                {
-                    // insert new ephemeris record
-                    LOG(INFO) << "New IONO record inserted in global map";
-                    global_galileo_iono_map.write(0, galileo_iono);
-                }
+                // insert new Iono record to the global Iono map
+                if (global_galileo_iono_map.read(0, galileo_iono_old))
+                    {
+                        // Check the Iono timestamp from UTC page (page 6). If it is newer, then update the Iono parameters
+                        if (galileo_iono.WN_5 > galileo_iono_old.WN_5)
+                            {
+                                LOG(INFO) << "IONO record updated in global map--new GALILEO UTC-IONO Week Number";
+                                global_galileo_iono_map.write(0, galileo_iono);
+                            }
+                        else
+                            {
+                                if (galileo_iono.TOW_5 > galileo_iono_old.TOW_5)
+                                    {
+                                        LOG(INFO) << "IONO record updated in global map--new GALILEO UTC-IONO time of Week";
+                                        global_galileo_iono_map.write(0, galileo_iono);
+                                        //std::cout << "GALILEO IONO time of Week old: " << galileo_iono_old.t0t_6<<std::endl;
+                                    }
+                                else
+                                    {
+                                        LOG(INFO) << "Not updating the existing Iono parameters in global map, Iono timestamp is not changing";
+                                    }
+                            }
+                    }
+                else
+                    {
+                        // insert new ephemeris record
+                        LOG(INFO) << "New IONO record inserted in global map";
+                        global_galileo_iono_map.write(0, galileo_iono);
+                    }
+            }
+
         }
 }
 
@@ -814,29 +838,33 @@ void ControlThread::gps_utc_model_data_collector()
     Gps_Utc_Model gps_utc_old;
     while(stop_ == false)
         {
-            global_gps_utc_model_queue.wait_and_pop(gps_utc);
-            LOG(INFO) << "New UTC MODEL record has arrived with A0=" << gps_utc.d_A0;
-            // insert new utc record to the global utc model map
-            if (global_gps_utc_model_map.read(0, gps_utc_old))
-                {
-                    if (gps_utc.i_WN_T > gps_utc_old.i_WN_T)
-                        {
-                            global_gps_utc_model_map.write(0, gps_utc);
-                        }
-                    else if ((gps_utc.i_WN_T == gps_utc_old.i_WN_T) and (gps_utc.d_t_OT > gps_utc_old.d_t_OT))
-                        {
-                            global_gps_utc_model_map.write(0, gps_utc);
-                        }
-                    else
-                        {
-                            LOG(INFO) << "Not updating the existing utc model";
-                        }
-                }
-            else
-                {
-                    // insert new utc model record
-                    global_gps_utc_model_map.write(0, gps_utc);
-                }
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( global_gps_utc_model_queue.try_pop(gps_utc) )
+            {
+                LOG(INFO) << "New UTC MODEL record has arrived with A0=" << gps_utc.d_A0;
+                // insert new utc record to the global utc model map
+                if (global_gps_utc_model_map.read(0, gps_utc_old))
+                    {
+                        if (gps_utc.i_WN_T > gps_utc_old.i_WN_T)
+                            {
+                                global_gps_utc_model_map.write(0, gps_utc);
+                            }
+                        else if ((gps_utc.i_WN_T == gps_utc_old.i_WN_T) and (gps_utc.d_t_OT > gps_utc_old.d_t_OT))
+                            {
+                                global_gps_utc_model_map.write(0, gps_utc);
+                            }
+                        else
+                            {
+                                LOG(INFO) << "Not updating the existing utc model";
+                            }
+                    }
+                else
+                    {
+                        // insert new utc model record
+                        global_gps_utc_model_map.write(0, gps_utc);
+                    }
+            }
+
         }
 }
 
@@ -847,10 +875,14 @@ void ControlThread::gps_ref_location_data_collector()
     Gps_Ref_Location gps_ref_location;
     while(stop_ == false)
         {
-            global_gps_ref_location_queue.wait_and_pop(gps_ref_location);
-            LOG(INFO) << "New ref location record has arrived with lat=" << gps_ref_location.lat << " lon=" << gps_ref_location.lon;
-            // insert new ref location record to the global ref location map
-            global_gps_ref_location_map.write(0, gps_ref_location);
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( global_gps_ref_location_queue.try_pop(gps_ref_location) )
+            {
+                LOG(INFO) << "New ref location record has arrived with lat=" << gps_ref_location.lat << " lon=" << gps_ref_location.lon;
+                // insert new ref location record to the global ref location map
+                global_gps_ref_location_map.write(0, gps_ref_location);
+            }
+
         }
 }
 
@@ -862,29 +894,33 @@ void ControlThread::gps_ref_time_data_collector()
     Gps_Ref_Time gps_ref_time_old;
     while(stop_ == false)
         {
-            global_gps_ref_time_queue.wait_and_pop(gps_ref_time);
-            LOG(INFO) << "New ref time record has arrived with TOW=" << gps_ref_time.d_TOW << " Week=" << gps_ref_time.d_Week;
-            // insert new ref time record to the global ref time map
-            if (global_gps_ref_time_map.read(0, gps_ref_time_old))
-                {
-                    if (gps_ref_time.d_Week > gps_ref_time_old.d_Week)
-                        {
-                            global_gps_ref_time_map.write(0, gps_ref_time);
-                        }
-                    else if ((gps_ref_time.d_Week == gps_ref_time_old.d_Week) and (gps_ref_time.d_TOW > gps_ref_time_old.d_TOW))
-                        {
-                            global_gps_ref_time_map.write(0, gps_ref_time);
-                        }
-                    else
-                        {
-                            LOG(INFO) << "Not updating the existing ref time";
-                        }
-                }
-            else
-                {
-                    // insert new ref time record
-                    global_gps_ref_time_map.write(0, gps_ref_time);
-                }
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( global_gps_ref_time_queue.try_pop(gps_ref_time) )
+            {
+                LOG(INFO) << "New ref time record has arrived with TOW=" << gps_ref_time.d_TOW << " Week=" << gps_ref_time.d_Week;
+                // insert new ref time record to the global ref time map
+                if (global_gps_ref_time_map.read(0, gps_ref_time_old))
+                    {
+                        if (gps_ref_time.d_Week > gps_ref_time_old.d_Week)
+                            {
+                                global_gps_ref_time_map.write(0, gps_ref_time);
+                            }
+                        else if ((gps_ref_time.d_Week == gps_ref_time_old.d_Week) and (gps_ref_time.d_TOW > gps_ref_time_old.d_TOW))
+                            {
+                                global_gps_ref_time_map.write(0, gps_ref_time);
+                            }
+                        else
+                            {
+                                LOG(INFO) << "Not updating the existing ref time";
+                            }
+                    }
+                else
+                    {
+                        // insert new ref time record
+                        global_gps_ref_time_map.write(0, gps_ref_time);
+                    }
+            }
+
         }
 }
 
@@ -895,39 +931,43 @@ void ControlThread::galileo_utc_model_data_collector()
     Galileo_Utc_Model galileo_utc_old;
     while(stop_ == false)
         {
-            global_galileo_utc_model_queue.wait_and_pop(galileo_utc);
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            while( global_galileo_utc_model_queue.try_pop(galileo_utc) )
+            {
 
-            // DEBUG MESSAGE
-            LOG(INFO) << "UTC record has arrived" << std::endl;
+                // DEBUG MESSAGE
+                LOG(INFO) << "UTC record has arrived" << std::endl;
 
-            // insert new UTC record to the global UTC map
-            if (global_galileo_utc_model_map.read(0, galileo_utc_old))
-                {
-                    // Check the UTC timestamp. If it is newer, then update the ephemeris
-                    if (galileo_utc.WNot_6 > galileo_utc_old.WNot_6) //further check because it is not clear when IOD is reset
-                        {
-                            DLOG(INFO) << "UTC record updated --new GALILEO UTC Week Number =" << galileo_utc.WNot_6;
-                            global_galileo_utc_model_map.write(0, galileo_utc);
-                        }
-                    else
-                        {
-                            if (galileo_utc.t0t_6 > galileo_utc_old.t0t_6)
-                                {
-                                    DLOG(INFO) << "UTC record updated --new GALILEO UTC time of Week =" << galileo_utc.t0t_6;
-                                    global_galileo_utc_model_map.write(0, galileo_utc);
-                                }
-                            else
-                                {
-                                    LOG(INFO) << "Not updating the existing UTC in global map, timestamp is not changing";
-                                }
-                        }
-                }
-            else
-                {
-                    // insert new ephemeris record
-                    LOG(INFO) << "New UTC record inserted in global map";
-                    global_galileo_utc_model_map.write(0, galileo_utc);
-                }
+                // insert new UTC record to the global UTC map
+                if (global_galileo_utc_model_map.read(0, galileo_utc_old))
+                    {
+                        // Check the UTC timestamp. If it is newer, then update the ephemeris
+                        if (galileo_utc.WNot_6 > galileo_utc_old.WNot_6) //further check because it is not clear when IOD is reset
+                            {
+                                DLOG(INFO) << "UTC record updated --new GALILEO UTC Week Number =" << galileo_utc.WNot_6;
+                                global_galileo_utc_model_map.write(0, galileo_utc);
+                            }
+                        else
+                            {
+                                if (galileo_utc.t0t_6 > galileo_utc_old.t0t_6)
+                                    {
+                                        DLOG(INFO) << "UTC record updated --new GALILEO UTC time of Week =" << galileo_utc.t0t_6;
+                                        global_galileo_utc_model_map.write(0, galileo_utc);
+                                    }
+                                else
+                                    {
+                                        LOG(INFO) << "Not updating the existing UTC in global map, timestamp is not changing";
+                                    }
+                            }
+                    }
+                else
+                    {
+                        // insert new ephemeris record
+                        LOG(INFO) << "New UTC record inserted in global map";
+                        global_galileo_utc_model_map.write(0, galileo_utc);
+                    }
+            }
+
         }
 }
 
