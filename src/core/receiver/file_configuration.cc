@@ -35,6 +35,7 @@
 
 #include "file_configuration.h"
 #include <string>
+#include <boost/lexical_cast.hpp>
 #include <glog/logging.h>
 #include "INIReader.h"
 #include "string_converter.h"
@@ -203,6 +204,16 @@ void FileConfiguration::init()
         {
             LOG(WARNING) << "Unable to open configuration file " << filename_;
         }
+
+    // COD:
+    // Ugly hack for taking care of clock drift corrections
+    double clock_corr_ppm = property("SignalSource.clock_correction_ppm", (double)0.0);
+    double internal_fs = property("GNSS-SDR.internal_fs_hz", (double)4e6 );
+
+    internal_fs -= (internal_fs / 1e6 ) * clock_corr_ppm;
+    set_property( "GNSS-SDR.internal_fs_hz", boost::lexical_cast<std::string>(internal_fs) );
+    LOG(INFO) << "Setting GNSS-SDR.internal_fs_hz to " << boost::lexical_cast<std::string>(internal_fs);
+
 }
 
 
