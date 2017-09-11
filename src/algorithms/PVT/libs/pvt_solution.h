@@ -48,6 +48,7 @@ class Pvt_Solution
 {
 private:
     double d_rx_dt_s;         // RX time offset [s]
+    double d_rx_clock_drift_ppm;      // RX clock drift [ppm]
 
     double d_latitude_d;      // RX position Latitude WGS84 [deg]
     double d_longitude_d;     // RX position Longitude WGS84 [deg]
@@ -67,6 +68,7 @@ private:
     int d_averaging_depth;    // Length of averaging window
 
     arma::vec d_rx_pos;
+    arma::vec d_rx_vel;
     boost::posix_time::ptime d_position_UTC_time;
     int d_valid_observations;
 
@@ -97,8 +99,14 @@ public:
     double get_avg_longitude() const;       //!< Get RX position averaged Longitude WGS84 [deg]
     double get_avg_height() const;          //!< Get RX position averaged height WGS84 [m]
 
+    double get_clock_drift_ppm() const;    //!< Get the Rx clock drift [ppm]
+    void set_clock_drift_ppm(double clock_drift_ppm ); //!< Set the Rx clock drift [ppm]
+
     void set_rx_pos(const arma::vec & pos); //!< Set position: Latitude [deg], longitude [deg], height [m]
-    arma::vec get_rx_pos() const;
+    const arma::vec& get_rx_pos() const;
+
+    void set_rx_vel(const arma::vec &vel);        //!< Set Rx velocity vector [ENU]
+    const arma::vec& get_rx_vel() const;          //!< Get Rx velocity vector [ENU]
 
     bool is_valid_position() const;
     void set_valid_position(bool is_valid);

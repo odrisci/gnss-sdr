@@ -643,6 +643,8 @@ void estvel(const obsd_t *obs, int n, const double *rs, const double *dts,
             if (norm_rtk(dx, 4) < 1e-6)
                 {
                     for (i = 0; i < 3; i++) sol->rr[i+3] = x[i];
+                    // Store the clock drift in m/s
+                    sol->dtr[5] = x[3];
                     break;
                 }
         }

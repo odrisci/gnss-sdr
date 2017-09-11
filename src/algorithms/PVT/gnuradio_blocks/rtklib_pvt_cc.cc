@@ -1140,11 +1140,23 @@ int rtklib_pvt_cc::work (int noutput_items, gr_vector_const_void_star &input_ite
                         {
                             std::cout << "Position at " << boost::posix_time::to_simple_string(d_ls_pvt->get_position_UTC_time())
                                       << " UTC using " << d_ls_pvt->get_num_valid_observations() << " observations is Lat = " << d_ls_pvt->get_latitude() << " [deg], Long = " << d_ls_pvt->get_longitude()
-                                      << " [deg], Height= " << d_ls_pvt->get_height() << " [m]" << std::endl;
+                                      << " [deg], Height= " << d_ls_pvt->get_height() << " [m]" 
+                                      << " Time Offset = " << d_ls_pvt->get_time_offset_s() << " [s] " << std::endl;
 
                             LOG(INFO) << "Position at " << boost::posix_time::to_simple_string(d_ls_pvt->get_position_UTC_time())
                                       << " UTC using "<< d_ls_pvt->get_num_valid_observations() << " observations is Lat = " << d_ls_pvt->get_latitude() << " [deg], Long = " << d_ls_pvt->get_longitude()
-                                      << " [deg], Height= " << d_ls_pvt->get_height() << " [m]";
+                                      << " [deg], Height= " << d_ls_pvt->get_height() << " [m]"
+                                      << " Time Offset = " << d_ls_pvt->get_time_offset_s() << " [s] " << std::endl;
+
+                            std::cout << "Velocity at " << boost::posix_time::to_simple_string(d_ls_pvt->get_position_UTC_time())
+                                      << " UTC using " << d_ls_pvt->get_num_valid_observations() << " observations is North = " << d_ls_pvt->get_rx_vel()(1) << " [m/s], East = " << d_ls_pvt->get_rx_vel()(0)
+                                      << " [m/s], Up= " << -d_ls_pvt->get_rx_vel()(2) << " [m/s]" 
+                                      << " Clock drift = " << d_ls_pvt->get_clock_drift_ppm() << " [ppm] " << std::endl;
+
+                            LOG(INFO) << "Velocity at " << boost::posix_time::to_simple_string(d_ls_pvt->get_position_UTC_time())
+                                      << " UTC using " << d_ls_pvt->get_num_valid_observations() << " observations is North = " << d_ls_pvt->get_rx_vel()(1) << " [m/s], East = " << d_ls_pvt->get_rx_vel()(0)
+                                      << " [m/s], Up= " << -d_ls_pvt->get_rx_vel()(2) << " [m/s]" 
+                                      << " Clock drift = " << d_ls_pvt->get_clock_drift_ppm() << " [ppm] " << std::endl;
 
                             /* std::cout << "Dilution of Precision at " << boost::posix_time::to_simple_string(d_ls_pvt->get_position_UTC_time())
                                          << " UTC using "<< d_ls_pvt->get_num_valid_observations()<<" observations is HDOP = " << d_ls_pvt->get_HDOP() << " VDOP = "
