@@ -64,6 +64,7 @@ OsmosdrSignalSource::OsmosdrSignalSource(ConfigurationInterface* configuration,
     rf_gain_ = configuration->property(role + ".rf_gain", 40.0);
     if_gain_ = configuration->property(role + ".if_gain", 40.0);
     sample_rate_ = configuration->property(role + ".sampling_frequency", 2.0e6);
+    ppm_corr_ = configuration->property(role + ".clock_correction_ppm", 0.0 );
     item_type_ = configuration->property(role + ".item_type", default_item_type);
     osmosdr_args_ = configuration->property(role + ".osmosdr_args", std::string( ));
 
@@ -104,9 +105,12 @@ OsmosdrSignalSource::OsmosdrSignalSource(ConfigurationInterface* configuration,
                     osmosdr_source_->set_gain(gain_, 0);
                     osmosdr_source_->set_if_gain(rf_gain_, 0);
                     osmosdr_source_->set_bb_gain(if_gain_, 0);
-                    std::cout << boost::format("Actual RX Gain: %f dB...") % osmosdr_source_->get_gain() << std::endl;
-                    LOG(INFO) << boost::format("Actual RX Gain: %f dB...") % osmosdr_source_->get_gain();
-                }
+                    std::cout << boost::format("Actual RX Gain: %f dB...") % osmosdr_source_->get_gain("RF") << std::endl;
+                    LOG(INFO) << boost::format("Actual RX Gain: %f dB...") % osmosdr_source_->get_gain("RF");
+               }
+
+            // 5. Set the clock correction
+            osmosdr_source_->set_freq_corr( ppm_corr_, 0 );
         }
     else
         {

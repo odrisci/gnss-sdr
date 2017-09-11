@@ -96,6 +96,8 @@ private:
     double if_gain_;
     double rf_gain_;
 
+    double ppm_corr_;
+
     std::string item_type_;
     size_t item_size_;
     long samples_;
