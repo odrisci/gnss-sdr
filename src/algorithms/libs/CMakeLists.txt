@@ -19,10 +19,12 @@
 add_subdirectory(rtklib)
 
 set(GNSS_SPLIBS_SOURCES
+    clock_id.cc
     gps_l2c_signal.cc
     gps_l5_signal.cc
     galileo_e1_signal_processing.cc
     gnss_signal_processing.cc
+    gnss_time_converter.cc
     gps_sdr_signal_processing.cc
     glonass_l1_signal_processing.cc
     glonass_l2_signal_processing.cc
@@ -40,6 +42,8 @@ set(GNSS_SPLIBS_SOURCES
     conjugate_ic.cc
     gnss_sdr_create_directory.cc
     geofunctions.cc
+    time_interval_impl.cc
+    time_point_impl.cc
 )
 
 set(GNSS_SPLIBS_HEADERS
@@ -47,6 +51,8 @@ set(GNSS_SPLIBS_HEADERS
     gps_l5_signal.h
     galileo_e1_signal_processing.h
     gnss_signal_processing.h
+    gnss_time_converter.h
+    gnss_time_converter_impl.h
     gps_sdr_signal_processing.h
     glonass_l1_signal_processing.h
     glonass_l2_signal_processing.h
@@ -65,6 +71,7 @@ set(GNSS_SPLIBS_HEADERS
     gnss_sdr_create_directory.h
     gnss_circular_deque.h
     geofunctions.h
+    gnss_time.h
 )
 
 if(OPENCL_FOUND)

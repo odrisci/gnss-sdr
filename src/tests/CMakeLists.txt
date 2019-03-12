@@ -739,6 +739,24 @@ endif()
 
 
 #########################################################
+
+add_executable(gnss_time_test ${CMAKE_CURRENT_SOURCE_DIR}/single_test_main.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/unit-tests/arithmetic/time_test.cc
+)
+
+target_link_libraries(gnss_time_test 
+    PUBLIC
+    Gflags::gflags
+    Glog::glog
+    GTest::GTest
+    GTest::Main
+    algorithms_libs
+    core_receiver
+    core_system_parameters
+)
+
+#########################################################
+
 add_executable(matio_test
     ${CMAKE_CURRENT_SOURCE_DIR}/single_test_main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/unit-tests/arithmetic/matio_test.cc
