@@ -42,8 +42,8 @@ class TimeConverter;
 
 enum class GnssSystem : char
 {
-    kGalileo = 'E',
     kBeiDou = 'C',
+    kGalileo = 'E',
     kGps = 'G',
     kIrnss = 'I',
     kQzss = 'J',
@@ -79,6 +79,7 @@ public:
         kUTC,
         kUnix,
         kNTP,
+        kTAI,
         kUniEnd = 4096
     };
 
@@ -90,6 +91,7 @@ public:
     static ClockID MakeUTC( uint32_t id = kSystemClockID );
     static ClockID MakeUnix( uint32_t id = kSystemClockID );
     static ClockID MakeNTP( uint32_t id = kSystemClockID );
+    static ClockID MakeTAI( uint32_t id = kSystemClockID );
     static ClockID MakeReceiver( uint32_t id = 0 );
 
     bool IsCompatibleWith( ClockID rhs ) const;
@@ -259,6 +261,7 @@ public:
     double AsSeconds(void) const;
 
     int64_t IntegerSeconds(void) const;
+    TimeInterval RemainderMod(TimeInterval modulus) const;
 
     //!
     // Get the time interval in weeks
@@ -269,6 +272,7 @@ public:
 
     /// Static member functions to create time intervals:
     // @{
+    static TimeInterval Years(int numYears);
     static TimeInterval Weeks(int numWeeks);
 
     static TimeInterval Days(int numDays);
@@ -288,13 +292,15 @@ public:
     TimeInterval &operator+=(TimeInterval const &dT);
     TimeInterval &operator-=(TimeInterval const &dT);
     TimeInterval &operator*=(int64_t n);
+    TimeInterval& operator/=(int64_t n);
 
     friend TimeInterval operator+(TimeInterval lhs, TimeInterval const &rhs);
     friend TimeInterval operator-(TimeInterval lhs, TimeInterval const &rhs);
 
     friend TimeInterval operator*(TimeInterval lhs, int64_t n);
-
     friend TimeInterval operator*(int64_t n, TimeInterval rhs);
+
+    friend TimeInterval operator/(TimeInterval lhs, int64_t n);
 
     friend bool operator==(TimeInterval const &lhs, TimeInterval const &rhs);
     friend bool operator!=(TimeInterval const &lhs, TimeInterval const &rhs);

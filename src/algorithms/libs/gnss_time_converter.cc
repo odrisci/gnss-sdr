@@ -30,6 +30,7 @@
 
 #include "gnss_time_converter_impl.h"
 #include <algorithm>
+#include <iostream>
 
 TimeConverter::TimeConverter() : mImpl(new TimeConverterImpl()) {}
 
@@ -53,39 +54,55 @@ void TimeConverter::SetReceiverEpoch(uint32_t rx_id, TimePoint epoch)
 TimeConverterImpl::TimeConverterImpl()
 {
     // Create the leap second table
+    // NTP epoch is 1900-JAN-01 00:00:00 UTC
+    // Unix epoch is 1970-JAN-01 00:00:00 UTC : 70 years of which 17 are leap years later
+    static const TimeInterval unix_epoch_offset = TimeInterval::Years(70) + TimeInterval::Days(17);
+    // GPS epoch is 1980-JAN-06 00:00:00 UTC : 10 years of which 2 are leap years and 5 days later + 19 leap seconds
+    // Glonass epoch is ill defined, using GPS epoch
+    static const TimeInterval gps_epoch_offset = unix_epoch_offset + TimeInterval::Years(10) + TimeInterval::Days(2)
+        + TimeInterval::Days(5) + TimeInterval::Seconds(19);
+    // Galileo epoch is 1024 weeks after GPS
+    static const TimeInterval gal_epoch_offset = gps_epoch_offset + TimeInterval::Weeks(1024);
+    // BeiDou epoch is 2006-JAN-01 00:00:00 UTC : 26 years - 5 days + 14 extra leap seconds after GPS
+    static const TimeInterval beidou_epoch_offset = gps_epoch_offset + TimeInterval::Years(26)
+        + TimeInterval::Days(7) - TimeInterval::Days(5) + TimeInterval::Seconds(14);
 
     // Create the epoch offset table (all relaitve to GPS)
-    d_gps_epoch_offset_table.push_back(
+    d_epoch_offset_table.push_back(
         epoch_offset_entry_t(ClockID::MakeGnss(GnssSystem::kGps),
-            TimeInterval::Seconds(0), 19));
+            gps_epoch_offset));
     // galileo epoch is 1024 weeks after GPS, but occurs at the GPS weekly epoch,
     // not the UTC weekly epoch (13 seconds difference)
-    d_gps_epoch_offset_table.push_back(
+    d_epoch_offset_table.push_back(
         epoch_offset_entry_t(ClockID::MakeGnss(GnssSystem::kGalileo),
-            TimeInterval::Weeks(1024), 19));
-    d_gps_epoch_offset_table.push_back(
+            gal_epoch_offset));
+    d_epoch_offset_table.push_back(
         epoch_offset_entry_t(ClockID::MakeGnss(GnssSystem::kGlonass),
-            TimeInterval::Seconds(0)));
-    d_gps_epoch_offset_table.push_back(
+            gps_epoch_offset));
+    d_epoch_offset_table.push_back(
         epoch_offset_entry_t(ClockID::MakeGnss(GnssSystem::kBeiDou),
-            TimeInterval::Weeks(1356), 19+14));
+            beidou_epoch_offset));
 
     // Non-GNSS times-scales:
     // Unix Epoch is 01-Jan-1970
-    d_gps_epoch_offset_table.push_back(
+    d_epoch_offset_table.push_back(
         epoch_offset_entry_t(ClockID::MakeUnix(),
-            TimeInterval::Seconds(-315964800LL)));
+            unix_epoch_offset));
     //
     // Treat UTC Epoch as same as Unix
-    d_gps_epoch_offset_table.push_back(
+    d_epoch_offset_table.push_back(
         epoch_offset_entry_t(ClockID::MakeUTC(),
-            TimeInterval::Seconds(-315964800LL)));
+            unix_epoch_offset));
 
     // NTP Epoch is Jan 1 1900
-    // That's 80 years (365*80 + 19 leap days) + 6 days prior to gps
-    d_gps_epoch_offset_table.push_back(
+    d_epoch_offset_table.push_back(
         epoch_offset_entry_t(ClockID::MakeNTP(),
-            TimeInterval::Days(365 * 80 + 19 + 6) * -1));
+            TimeInterval::Seconds(0.0) ));
+    
+    // Treat TAI like NTP
+    d_epoch_offset_table.push_back(
+        epoch_offset_entry_t(ClockID::MakeTAI(),
+            TimeInterval::Seconds(0.0) ));
 
     int64_t leap_epochs[] = {
         2272060800LL,
@@ -139,26 +156,23 @@ std::pair<bool, TimePoint> TimeConverterImpl::ConvertNoLeaps(TimePoint in, Clock
         }
 
     // First thing we do is add the relative offset of the epoch if we have that:
-    auto ip_offset_itr = std::find_if(d_gps_epoch_offset_table.begin(),
-        d_gps_epoch_offset_table.end(),
+    auto ip_offset_itr = std::find_if(d_epoch_offset_table.begin(),
+        d_epoch_offset_table.end(),
         [in_sys](epoch_offset_entry_t v) { return v.sys == in_sys; });
 
-    auto op_offset_itr = std::find_if(d_gps_epoch_offset_table.begin(),
-        d_gps_epoch_offset_table.end(),
+    auto op_offset_itr = std::find_if(d_epoch_offset_table.begin(),
+        d_epoch_offset_table.end(),
         [out_sys](epoch_offset_entry_t v) {
             return v.sys == out_sys;
         });
 
-    if (ip_offset_itr == d_gps_epoch_offset_table.end() ||
-        op_offset_itr == d_gps_epoch_offset_table.end())
+    if (ip_offset_itr == d_epoch_offset_table.end() ||
+        op_offset_itr == d_epoch_offset_table.end())
         {
             return std::make_pair(false, ret);
         }
 
-    TimeInterval epoch_delta = (ip_offset_itr->offset +
-        TimeInterval::Seconds(ip_offset_itr->num_leap_seconds_at_epoch))
-        - (op_offset_itr->offset 
-        + TimeInterval::Seconds(op_offset_itr->num_leap_seconds_at_epoch));
+    TimeInterval epoch_delta = ip_offset_itr->offset - op_offset_itr->offset;
 
     return std::make_pair(true, ret + epoch_delta);
 }
@@ -239,24 +253,24 @@ void TimeConverterImpl::SetReceiverEpoch(uint32_t rx_id, TimePoint epoch)
 {
     ClockID rx_sys = ClockID::MakeReceiver( rx_id );
 
-    std::pair< bool, TimePoint > gps_epoch_pair = Convert( epoch, ClockID::MakeGnss( GnssSystem::kGps ) );
+    std::pair< bool, TimePoint > tai_epoch_pair = Convert( epoch, ClockID::MakeTAI() );
 
-    if( gps_epoch_pair.first )
+    if( tai_epoch_pair.first )
     {
         auto offset_entry = epoch_offset_entry_t( rx_sys, 
-                gps_epoch_pair.second.TimeSinceEpoch() );
+                tai_epoch_pair.second.TimeSinceEpoch() );
 
         auto epoch_offset_iter = std::find_if(
-                d_gps_epoch_offset_table.begin(),
-                d_gps_epoch_offset_table.end(),
+                d_epoch_offset_table.begin(),
+                d_epoch_offset_table.end(),
                 [rx_sys]( auto v )
                 {
                     return v.sys == rx_sys;
                 });
 
-        if( epoch_offset_iter == d_gps_epoch_offset_table.end() )
+        if( epoch_offset_iter == d_epoch_offset_table.end() )
         {
-            d_gps_epoch_offset_table.push_back( offset_entry );
+            d_epoch_offset_table.push_back( offset_entry );
         }
         else
         {

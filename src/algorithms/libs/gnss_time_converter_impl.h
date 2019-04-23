@@ -51,19 +51,16 @@ private:
     {
         ClockID sys;
         TimeInterval offset;
-        int num_leap_seconds_at_epoch;
 
-        epoch_offset_entry_t(ClockID sys_, TimeInterval offset_,
-            int num_leap_seconds_at_epoch_ = 0)
+        epoch_offset_entry_t(ClockID sys_, TimeInterval offset_)
             : sys(sys_),
-              offset(offset_),
-              num_leap_seconds_at_epoch(num_leap_seconds_at_epoch_)
+              offset(offset_)
         {
         }
     };
 
     std::vector<leap_second_entry_t> d_leap_second_table;
-    std::vector<epoch_offset_entry_t> d_gps_epoch_offset_table;
+    std::vector<epoch_offset_entry_t> d_epoch_offset_table;
 
     std::pair<bool, TimePoint> ConvertNoLeaps(TimePoint in, ClockID out_type);
 

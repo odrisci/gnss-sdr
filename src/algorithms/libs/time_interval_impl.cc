@@ -78,6 +78,45 @@ double TimeIntervalImpl::AsSeconds(void) const
     return seconds;
 }
 
+TimeIntervalImpl TimeIntervalImpl::RemainderMod( TimeIntervalImpl modulus ) const
+{
+    int64_t quotSeconds = 0;
+    int64_t quotFrac = 0;
+    int64_t remSeconds = 0;
+    int64_t remFrac = 0;
+
+    int64_t a = mSeconds;
+    int64_t b = mFractionalSeconds;
+    int64_t c = modulus.mSeconds;
+    int64_t d = modulus.mFractionalSeconds;
+
+    if( c == 0 )
+    {
+        remFrac = b % d;
+    }
+    else
+    {
+        quotFrac = a/c;
+
+        remSeconds = a - quotFrac*c;
+        remFrac = quotFrac*d + b;
+    }
+
+    TimeIntervalImpl motwo = modulus / 2;
+
+    TimeIntervalImpl ret = modulus;
+
+    ret.mSeconds = remSeconds;
+    ret.mFractionalSeconds = remFrac;
+
+    if( ret > motwo )
+    {
+        ret -= modulus;
+    }
+
+    return ret;
+}
+
 int TimeIntervalImpl::AsWeeks(void) const { return mSeconds / Constants::kSecondsPerWeek; }
 
 TimeIntervalImpl& TimeIntervalImpl::operator=(TimeIntervalImpl const& rhs)
@@ -147,6 +186,18 @@ TimeIntervalImpl& TimeIntervalImpl::operator*=(int64_t n)
     return *this;
 }
 
+TimeIntervalImpl& TimeIntervalImpl::operator/=(int64_t n)
+{
+    int64_t rem_seconds = mSeconds %n;
+    mSeconds /= n;
+
+    mFractionalSeconds /= n;
+    mFractionalSeconds += rem_seconds *( Constants::kOneSecondInternal / n );
+
+    Normalise();
+    return *this;
+}
+
 TimeIntervalImpl operator+(TimeIntervalImpl lhs, TimeIntervalImpl const& rhs)
 {
     lhs += rhs;
@@ -169,6 +220,12 @@ TimeIntervalImpl operator*(int64_t n, TimeIntervalImpl rhs)
 {
     rhs *= n;
     return rhs;
+}
+
+TimeIntervalImpl operator/(TimeIntervalImpl lhs, int64_t n)
+{
+    lhs /= n;
+    return lhs;
 }
 
 bool operator==(TimeIntervalImpl const& lhs, TimeIntervalImpl const& rhs)
@@ -251,7 +308,19 @@ TimeInterval::~TimeInterval() = default;
 
 double TimeInterval::AsSeconds(void) const { return mImpl->AsSeconds(); }
 
+TimeInterval TimeInterval::RemainderMod(TimeInterval modulus) const
+{ 
+    TimeInterval ret = modulus;
+    *(ret.mImpl) = mImpl->RemainderMod(*(modulus.mImpl));
+    return ret;
+}
+
 int TimeInterval::AsWeeks(void) const { return mImpl->AsWeeks(); }
+
+TimeInterval TimeInterval::Years(int numYears)
+{
+    return TimeInterval::Days( numYears*365 );
+}
 
 TimeInterval TimeInterval::Weeks(int numWeeks)
 {
@@ -332,6 +401,12 @@ TimeInterval& TimeInterval::operator*=(int64_t n)
     return *this;
 }
 
+TimeInterval& TimeInterval::operator/=(int64_t n)
+{
+    *(this->mImpl) /= n;
+    return *this;
+}
+
 TimeInterval operator+(TimeInterval lhs, TimeInterval const& rhs)
 {
     lhs += rhs;
@@ -354,6 +429,12 @@ TimeInterval operator*(int64_t n, TimeInterval rhs)
 {
     rhs *= n;
     return rhs;
+}
+
+TimeInterval operator/(TimeInterval lhs, int64_t n)
+{
+    lhs /= n;
+    return lhs;
 }
 
 bool operator==(TimeInterval const& lhs, TimeInterval const& rhs)

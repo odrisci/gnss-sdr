@@ -176,7 +176,7 @@ TimePoint TimePoint::MakeGnss(GnssSystem sys, TimeInterval time_interval)
 {
     ClockID clockID = ClockID::MakeGnss(sys);
 
-    return TimePoint{clockID, time_interval};
+    return TimePoint( clockID, time_interval );
 }
 
 TimePoint TimePoint::MakeGnss(GnssSystem sys, int week_number, double TOW)

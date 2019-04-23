@@ -55,6 +55,7 @@ class TimeIntervalImpl
   // WARNING: this may cause overflow if the interval is large:
   double AsSeconds(void) const;
 
+  TimeIntervalImpl RemainderMod( TimeIntervalImpl modulus ) const;
   //!
   // Get the time interval in weeks
   // This returns the whole integer number of weeks in the time interval
@@ -64,6 +65,7 @@ class TimeIntervalImpl
   TimeIntervalImpl& operator+=(TimeIntervalImpl const& dT);
   TimeIntervalImpl& operator-=(TimeIntervalImpl const& dT);
   TimeIntervalImpl& operator*=(int64_t n);
+  TimeIntervalImpl& operator/=(int64_t n);
 
   friend TimeIntervalImpl operator+(TimeIntervalImpl lhs,
                                     TimeIntervalImpl const& rhs);
@@ -76,6 +78,9 @@ class TimeIntervalImpl
 
   friend TimeIntervalImpl operator*(int64_t n,
                                     TimeIntervalImpl rhs);
+
+  friend TimeIntervalImpl operator/(TimeIntervalImpl lhs,
+                                    int64_t n);
 
   friend bool operator==(TimeIntervalImpl const& lhs,
                          TimeIntervalImpl const& rhs);

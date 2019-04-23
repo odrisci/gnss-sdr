@@ -79,6 +79,12 @@ ClockID ClockID::MakeNTP(uint32_t id)
     return ret;
 }
 
+ClockID ClockID::MakeTAI(uint32_t id)
+{
+    ClockID ret( eClockSystem::kTAI, id );
+    return ret;
+}
+
 ClockID ClockID::MakeReceiver( uint32_t id)
 {
     ClockID ret( eClockSystem::kReceiver, id );
@@ -122,6 +128,7 @@ bool ClockID::KeepsLeapSeconds(void) const
         case eClockSystem::kQzss:
         case eClockSystem::kIrnss:
         case eClockSystem::kSbas:
+        case eClockSystem::kTAI:
             ret = false;
             break;
         case eClockSystem::kGlonass:
