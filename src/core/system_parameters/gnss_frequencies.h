@@ -49,4 +49,5 @@ const double FREQ1_BDS = 1.561098e9;  //!<  BeiDou B1 frequency (Hz)
 const double FREQ2_BDS = 1.20714e9;   //!<  BeiDou B2 frequency (Hz)
 const double FREQ3_BDS = 1.26852e9;   //!<  BeiDou B3 frequency (Hz)
 
+double GetFrequency( char System, char Signal[3], int freq_num = 0 );
 #endif

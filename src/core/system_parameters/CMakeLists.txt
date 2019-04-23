@@ -18,6 +18,7 @@
 
 
 set(SYSTEM_PARAMETERS_SOURCES
+    gnss_frequencies.cc
     gnss_satellite.cc
     gnss_signal.cc
     gps_navigation_message.cc
