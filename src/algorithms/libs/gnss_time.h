@@ -260,8 +260,21 @@ public:
     // WARNING: this may cause overflow if the interval is large:
     double AsSeconds(void) const;
 
+    //!
+    // Get the time interval in seconds as a 64 bit integer.
+    // WARNING: this may cause overflow if the interval is large:
     int64_t IntegerSeconds(void) const;
+
+    //!
+    // Compute the remainder of modulo another time interval
+    // E.g. TimeInterval long_time = TimeInterval::Weeks(25) + TimeInterval::NanoSeconds(12);
+    // TimeInterval t_frac = long_time.RemainderMod( TimeInterval::Seconds(1) );
+    // assert( t_frac == TimeInterval::NanoSeconds(12) )
     TimeInterval RemainderMod(TimeInterval modulus) const;
+
+    //!
+    // Get the time interval as the number of ticks of a clock at a given rate
+    int64_t AsTicks( double sample_rate ) const;
 
     //!
     // Get the time interval in weeks

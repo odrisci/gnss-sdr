@@ -117,6 +117,15 @@ TimeIntervalImpl TimeIntervalImpl::RemainderMod( TimeIntervalImpl modulus ) cons
     return ret;
 }
 
+int64_t TimeIntervalImpl::AsTicks( double sample_rate ) const
+{
+    int64_t whole_ticks_secs = mSeconds * static_cast<int64_t>( std::floor( sample_rate) );
+    int64_t frac_ticks_secs = static_cast<int64_t>( static_cast<double>(mSeconds) * std::fmod( sample_rate, 1.0 ) );
+    int64_t ticks_frac_secs = static_cast<int64_t>( static_cast<double>(mFractionalSeconds)/static_cast<double>(Constants::kOneSecondInternal)*sample_rate);
+
+    return whole_ticks_secs + frac_ticks_secs + ticks_frac_secs;
+}
+
 int TimeIntervalImpl::AsWeeks(void) const { return mSeconds / Constants::kSecondsPerWeek; }
 
 TimeIntervalImpl& TimeIntervalImpl::operator=(TimeIntervalImpl const& rhs)
@@ -307,6 +316,11 @@ TimeInterval::TimeInterval(TimeInterval&& rhs) : mImpl(std::move(rhs.mImpl))
 TimeInterval::~TimeInterval() = default;
 
 double TimeInterval::AsSeconds(void) const { return mImpl->AsSeconds(); }
+
+int64_t TimeInterval::AsTicks(double sample_rate) const
+{
+    return mImpl->AsTicks(sample_rate);
+}
 
 TimeInterval TimeInterval::RemainderMod(TimeInterval modulus) const
 { 

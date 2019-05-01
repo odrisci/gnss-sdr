@@ -85,6 +85,61 @@ TEST(TimeTest, CanConstructTimePoint)
     ASSERT_EQ(t.TOW().AsSeconds(), 604500);
 }
 
+TEST(TimeTest, CorrectlyComputesRemainders)
+{
+    int n_weeks = 2048;
+    int n_secs = 4500;
+    int n_nano_secs = 100;
+    int n_milli_secs = 23;
+    TimeInterval t = 
+        TimeInterval::Weeks(n_weeks) 
+        + TimeInterval::Seconds(n_secs)
+        + TimeInterval::MilliSeconds(n_milli_secs)
+        + TimeInterval::NanoSeconds(n_nano_secs);
+
+    TimeInterval remainder = t.RemainderMod( TimeInterval::Weeks(1) );
+
+    ASSERT_EQ( remainder, TimeInterval::Seconds(n_secs ) +
+            TimeInterval::MilliSeconds(n_milli_secs ) +
+            TimeInterval::NanoSeconds( n_nano_secs ) );
+
+    remainder = t.RemainderMod( TimeInterval::Seconds(1) );
+
+    ASSERT_EQ( remainder, TimeInterval::MilliSeconds(n_milli_secs ) +
+            TimeInterval::NanoSeconds( n_nano_secs ) );
+
+    remainder = t.RemainderMod( TimeInterval::MilliSeconds(1) );
+
+    ASSERT_EQ( remainder, TimeInterval::NanoSeconds( n_nano_secs ) );
+
+    remainder = t.RemainderMod( TimeInterval::NanoSeconds(1) );
+
+    ASSERT_EQ( remainder, TimeInterval::Seconds(0) );
+
+}
+
+TEST(TimeTest, ComputesClockTicks)
+{
+    int64_t fs_exact = 40000000; // 40 Msps
+    double fs = static_cast<double>( fs_exact );
+
+    int64_t sample_counter = fs_exact * 3600 * 24 * 7 * 51 ;
+
+    TimeInterval dtTicks = TimeInterval::Ticks( sample_counter, fs );
+
+    ASSERT_EQ( dtTicks.AsWeeks(), 51 );
+
+    int64_t tick_count = dtTicks.AsTicks( fs );
+
+    ASSERT_EQ( tick_count, sample_counter );
+
+    dtTicks += TimeInterval::Ticks( 1, fs );
+
+    tick_count = dtTicks.AsTicks( fs );
+
+    ASSERT_EQ( tick_count, sample_counter + 1 );
+}
+
 TEST(TimeConverterTest, CanConvertGalileoToGps)
 {
     TimePoint tGps = TimePoint::MakeGnss(GnssSystem::kGps,

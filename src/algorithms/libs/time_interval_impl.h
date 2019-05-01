@@ -56,6 +56,7 @@ class TimeIntervalImpl
   double AsSeconds(void) const;
 
   TimeIntervalImpl RemainderMod( TimeIntervalImpl modulus ) const;
+  int64_t AsTicks( double sample_rate ) const;
   //!
   // Get the time interval in weeks
   // This returns the whole integer number of weeks in the time interval
