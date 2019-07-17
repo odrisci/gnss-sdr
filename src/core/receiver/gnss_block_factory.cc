@@ -105,6 +105,7 @@
 #include "pulse_blanking_filter.h"
 #include "rtklib_pvt.h"
 #include "rtl_tcp_signal_source.h"
+#include "rx_synch_observables.h"
 #include "sbas_l1_telemetry_decoder.h"
 #include "signal_conditioner.h"
 #include "spir_file_signal_source.h"
@@ -1922,6 +1923,12 @@ std::unique_ptr<GNSSBlockInterface> GNSSBlockFactory::GetBlock(
              (implementation == "Galileo_E5A_Observables"))
         {
             std::unique_ptr<GNSSBlockInterface> block_(new HybridObservables(configuration.get(), role, in_streams,
+                out_streams));
+            block = std::move(block_);
+        }
+    else if ( implementation == "RxSynch_Observables" )
+        {
+            std::unique_ptr<GNSSBlockInterface> block_(new RxSynchObservables(configuration.get(), role, in_streams,
                 out_streams));
             block = std::move(block_);
         }

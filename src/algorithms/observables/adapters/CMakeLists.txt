@@ -18,10 +18,12 @@
 
 set(OBS_ADAPTER_SOURCES
     hybrid_observables.cc
+    rx_synch_observables.cc
 )
 
 set(OBS_ADAPTER_HEADERS
     hybrid_observables.h
+    rx_synch_observables.h
 )
 
 source_group(Headers FILES ${OBS_ADAPTER_HEADERS})
