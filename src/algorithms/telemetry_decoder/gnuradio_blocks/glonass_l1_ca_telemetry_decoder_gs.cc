@@ -424,6 +424,7 @@ int glonass_l1_ca_telemetry_decoder_gs::general_work(int noutput_items __attribu
 
     current_symbol.PRN = this->d_satellite.get_PRN();
     current_symbol.TOW_at_current_symbol_ms = round(d_TOW_at_current_symbol * 1000.0);
+    current_symbol.Week_at_current_symbol = d_nav.gnav_ephemeris.d_WN;
     // todo: glonass time to gps time should be done in observables block
     // current_symbol.TOW_at_current_symbol_ms -= -= static_cast<uint32_t>(delta_t) * 1000;  // Galileo to GPS TOW
 

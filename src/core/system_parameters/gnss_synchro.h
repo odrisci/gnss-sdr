@@ -72,6 +72,7 @@ public:
     // Telemetry Decoder
     bool Flag_valid_word;               //!< Set by Telemetry Decoder processing block
     uint32_t TOW_at_current_symbol_ms;  //!< Set by Telemetry Decoder processing block
+    uint32_t Week_at_current_symbol;    //!< Set by Telemetry Decoder processing block
 
     // Observables
     double Pseudorange_m;         //!< Set by Observables processing block
