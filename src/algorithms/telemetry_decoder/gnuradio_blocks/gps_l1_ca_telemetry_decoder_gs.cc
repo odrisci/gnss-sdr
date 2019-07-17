@@ -500,9 +500,7 @@ int gps_l1_ca_telemetry_decoder_gs::general_work(int noutput_items __attribute__
     if (flag_TOW_set == true)
         {
             current_symbol.TOW_at_current_symbol_ms = d_TOW_at_current_symbol_ms;
-            d_symbol_history.back().TOW_at_current_symbol_ms = d_TOW_at_current_symbol_ms;
             current_symbol.Week_at_current_symbol = d_nav.i_GPS_week;
-            d_symbol_history.back().Week_at_current_symbol = current_symbol.Week_at_current_symbol;
             current_symbol.Flag_valid_word = flag_TOW_set;
 
             if (flag_PLL_180_deg_phase_locked == true)

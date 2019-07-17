@@ -116,6 +116,8 @@ private:
 
     uint32_t d_TOW_at_Preamble_ms;
     uint32_t d_TOW_at_current_symbol_ms;
+    uint32_t d_week_number_at_current_symbol;
+
 
     bool flag_TOW_set;
     double delta_t;  //GPS-GALILEO time offset
